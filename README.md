@@ -11,17 +11,17 @@
 ##### (At this point: decoupler-staging, fairing-separation and engine/rcs-ignition).
 
 ##### Decouplers and also Fairingbases can have a delay assigned (up to 1200.0s (That's 20min)).
-The same for Engines (solid and "liquid") and RCS thrusters.
-Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
+##### The same for Engines (solid and "liquid") and RCS thrusters.
+##### Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
 
 ##### Every assigned 0 will be ignored, is thus unconfigured/unset.
 
 ##### Every other value will start counting down once the launchclamps are released.
-When reaching 0 the decoupler will automatically decouple, the engine light up and the RCS become active.
-Fairings automatically separate at the set height (above sealevel).
+##### When reaching 0 the decoupler will automatically decouple, the engine light up and the RCS become active.
+##### Fairings automatically separate at the set height (above sealevel).
 
 ##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages.
-But you can also organize decouplers and enginges the way you usually do. The upside is that you can always stage, decouple and separate fairings ahead of countdown. This mod does not prevent that.
+##### But you can also organize decouplers and enginges the way you usually do. The upside is that you can always stage, decouple and separate fairings ahead of countdown. This mod does not prevent that.
 
 ------------------------------------------------------------------------
 ## Example (of your standard launcher):
