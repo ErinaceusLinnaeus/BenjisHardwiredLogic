@@ -31,12 +31,12 @@ namespace BenjisHardwiredLogic
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
-        public const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
+        private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
         //Specify the delay in seconds in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 1200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)] //1200s - alows for 20 minutes; is that enough for a launch?
-        public float delaySeconds = 0;
+        private float delaySeconds = 0;
 
         //Shows the time until the decoupler is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
@@ -58,6 +58,8 @@ namespace BenjisHardwiredLogic
                 modInUse = false;
             else
                 modInUse = true;
+
+            base.OnInitialize();
         }
 
         //This happens every frame
@@ -103,7 +105,7 @@ namespace BenjisHardwiredLogic
     }
 
 
-    public class BenjisDelayedIgnitor : ModuleEngines
+    public class BenjisDelayedIgnitor : PartModule//ModuleEngines
     {
         #region Fields
 
@@ -124,12 +126,12 @@ namespace BenjisHardwiredLogic
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
-        public const string PAWIgnitorGroupName = "Benji's Delayed Ignitor";
+        private const string PAWIgnitorGroupName = "Benji's Delayed Ignitor";
 
         //Specify the delay in seconds in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 1200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)] //1200s - alows for 20 minutes; is that enough for a launch?
-        public float delaySeconds = 0;
+        private float delaySeconds = 0;
 
         //Shows the time until the engine is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
@@ -151,6 +153,8 @@ namespace BenjisHardwiredLogic
                 modInUse = false;
             else
                 modInUse = true;
+
+            base.OnInitialize();
         }
 
         //This happens every frame
@@ -213,12 +217,12 @@ namespace BenjisHardwiredLogic
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
-        public const string PAWFairingGroupName = "Benji's Fairing Separator";
+        private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
         //Specify the Height in kilometers in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 140f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
-        public float editorHeightToSeparate = 0;
+        private float editorHeightToSeparate = 0;
 
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
@@ -240,6 +244,8 @@ namespace BenjisHardwiredLogic
                 modInUse = false;
             else
                 modInUse = true;
+
+            base.OnInitialize();
         }
 
         //This happens every frame
