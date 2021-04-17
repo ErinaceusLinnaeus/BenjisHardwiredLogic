@@ -80,8 +80,6 @@ namespace BenjisHardwiredLogic
                         launchTime = Planetarium.GetUniversalTime();
                         //Start the Countdown
                         countingDown = true;
-                        //Hopefully no log-spamming //Dangerous to put print() inside OnUpdate()
-                        //print("LAUNCH");
                     }
                 }
                 //Check if the countdown started... if the Vessel is launched
@@ -175,8 +173,6 @@ namespace BenjisHardwiredLogic
                         launchTime = Planetarium.GetUniversalTime();
                         //Start the Countdown
                         countingDown = true;
-                        //Hopefully no log-spamming //Dangerous to put print() inside OnUpdate()
-                        //print("LAUNCH");
                     }
                 }
                 //Check if the countdown started... if the Vessel is launched
@@ -265,15 +261,11 @@ namespace BenjisHardwiredLogic
                         vesselLaunched = true;
                         //Start checking the height
                         checkingHeight = true;
-                        //Hopefully no log-spamming //Dangerous to put print() inside OnUpdate()
-                        //print("LAUNCH");
                     }
                 }
                 //Check if the check for height started ... if the Vessel is launched
                 else if (checkingHeight)
                 {
-                    print("part.localRoot.vessel.orbit.altitude");
-                    print(part.localRoot.vessel.orbit.altitude);
                     //Are we high enough to separate...
                     if (part.localRoot.vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
