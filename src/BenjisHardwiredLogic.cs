@@ -105,7 +105,6 @@ namespace BenjisHardwiredLogic
         #endregion
     }
 
-
     public class BenjisDelayedIgnitor : PartModule//ModuleEngines
     {
         #region Fields
@@ -291,5 +290,4 @@ namespace BenjisHardwiredLogic
         #endregion
 
     }
-
 }
