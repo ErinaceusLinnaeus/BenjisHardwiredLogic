@@ -21,7 +21,7 @@
 ##### Fairings automatically separate at the set height (above sealevel).
 
 ##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages (or 2, if the 1st stage Engine is immidiatly at 100%, for example if you're using a solidMotor).
-##### But you can also organize decouplers and enginges the way you usually do. The upside is that you can always stage, decouple and separate fairings ahead of countdown. This mod does not prevent that.
+##### But maybe you should just leave your StagingList the way it always was. Else you mess up all the dV and burntime readouts (KER and MJ). The other upside is, you can always stage, decouple and separate fairings ahead of countdown (in case of engine failures). This mod does not prevent that.
 
 ------------------------------------------------------------------------
 ## Example (of your standard launcher):
