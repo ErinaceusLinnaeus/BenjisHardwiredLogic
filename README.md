@@ -20,7 +20,7 @@
 ##### When reaching 0 the decoupler will automatically decouple, the engine light up and the RCS become active.
 ##### Fairings automatically separate at the set height (above sealevel).
 
-##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages.
+##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages (or 2, if the 1st stage Engine is immidiatly at 100%, for example if you're using a solidMotor).
 ##### But you can also organize decouplers and enginges the way you usually do. The upside is that you can always stage, decouple and separate fairings ahead of countdown. This mod does not prevent that.
 
 ------------------------------------------------------------------------
