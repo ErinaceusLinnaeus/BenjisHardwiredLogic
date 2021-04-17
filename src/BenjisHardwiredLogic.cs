@@ -59,6 +59,7 @@ namespace BenjisHardwiredLogic
             else
                 modInUse = true;
 
+            //Need to call that, in case other mods do stuff here
             base.OnInitialize();
         }
 
@@ -154,6 +155,7 @@ namespace BenjisHardwiredLogic
             else
                 modInUse = true;
 
+            //Need to call that, in case other mods do stuff here
             base.OnInitialize();
         }
 
@@ -245,6 +247,7 @@ namespace BenjisHardwiredLogic
             else
                 modInUse = true;
 
+            //Need to call that, in case other mods do stuff here
             base.OnInitialize();
         }
 
