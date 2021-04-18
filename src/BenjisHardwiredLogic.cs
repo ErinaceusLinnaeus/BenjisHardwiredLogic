@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using KSP.IO;
-using KSP.UI.Screens;
-
-namespace BenjisHardwiredLogic
+﻿namespace BenjisHardwiredLogic
 {
     public class BenjisDelayedDecoupler : PartModule
     {
@@ -50,15 +41,18 @@ namespace BenjisHardwiredLogic
         //This happens once
         public override void OnStart(StartState state)
         {
-            //Show me the numbers
-            timeToDecouple = delaySeconds;
+            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
+            if (state == StartState.PreLaunch)
+            {
+                //Show me the numbers
+                timeToDecouple = delaySeconds;
 
-            //Obviously an unconfigured decoupler
-            if (delaySeconds == 0)
-                modInUse = false;
-            else
-                modInUse = true;
-
+                //Obviously an unconfigured decoupler
+                if (delaySeconds == 0)
+                    modInUse = false;
+                else
+                    modInUse = true;
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
@@ -143,15 +137,18 @@ namespace BenjisHardwiredLogic
         //This happens once
         public override void OnStart(StartState state)
         {
-            //Show me the numbers
-            timeToIgnite = delaySeconds;
+            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
+            if (state == StartState.PreLaunch)
+            {
+                //Show me the numbers
+                timeToIgnite = delaySeconds;
 
-            //Obviously an unconfigured engine
-            if (delaySeconds == 0)
-                modInUse = false;
-            else
-                modInUse = true;
-
+                //Obviously an unconfigured engine
+                if (delaySeconds == 0)
+                    modInUse = false;
+                else
+                    modInUse = true;
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
@@ -233,15 +230,18 @@ namespace BenjisHardwiredLogic
         //This happens once
         public override void OnStart(StartState state)
         {
-            //Show me the numbers
-            flightHeightToSeparate = editorHeightToSeparate;
+            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
+            if (state == StartState.PreLaunch)
+            {
+                //Show me the numbers
+                flightHeightToSeparate = editorHeightToSeparate;
 
-            //Obviously an unconfigured fairing
-            if (editorHeightToSeparate == 0)
-                modInUse = false;
-            else
-                modInUse = true;
-            
+                //Obviously an unconfigured fairing
+                if (editorHeightToSeparate == 0)
+                    modInUse = false;
+                else
+                    modInUse = true;
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
