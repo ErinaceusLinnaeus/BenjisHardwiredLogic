@@ -48,7 +48,7 @@ namespace BenjisHardwiredLogic
         #region Overrides
 
         //This happens once
-        public override void OnInitialize()
+        public override void OnStart(StartState state)
         {
             //Show me the numbers
             timeToDecouple = delaySeconds;
@@ -60,7 +60,7 @@ namespace BenjisHardwiredLogic
                 modInUse = true;
 
             //Need to call that, in case other mods do stuff here
-            base.OnInitialize();
+            base.OnStart(state);
         }
 
         //This happens every frame
@@ -141,7 +141,7 @@ namespace BenjisHardwiredLogic
         #region Overrides
 
         //This happens once
-        public override void OnInitialize()
+        public override void OnStart(StartState state)
         {
             //Show me the numbers
             timeToIgnite = delaySeconds;
@@ -153,7 +153,7 @@ namespace BenjisHardwiredLogic
                 modInUse = true;
 
             //Need to call that, in case other mods do stuff here
-            base.OnInitialize();
+            base.OnStart(state);
         }
 
         //This happens every frame
@@ -231,7 +231,7 @@ namespace BenjisHardwiredLogic
         #region Overrides
 
         //This happens once
-        public override void OnInitialize()
+        public override void OnStart(StartState state)
         {
             //Show me the numbers
             flightHeightToSeparate = editorHeightToSeparate;
@@ -241,9 +241,9 @@ namespace BenjisHardwiredLogic
                 modInUse = false;
             else
                 modInUse = true;
-
+            
             //Need to call that, in case other mods do stuff here
-            base.OnInitialize();
+            base.OnStart(state);
         }
 
         //This happens every frame
