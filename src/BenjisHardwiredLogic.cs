@@ -25,9 +25,14 @@
         private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
         //Specify the delay in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 1200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)] //1200s - alows for 20 minutes; is that enough for a launch?
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [sec]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
+
+        //Specify the delay in seconds in the Editor
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
+        private float delayMinutes = 0;
 
         //Shows the time until the decoupler is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
@@ -44,11 +49,11 @@
             //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
             if (state == StartState.PreLaunch)
             {
-                //Show me the numbers
-                timeToDecouple = delaySeconds;
+                //Add up the two parts of the overall delay and show me the numbers
+                timeToDecouple = delaySeconds + (delayMinutes * 60f); ;
 
                 //Obviously an unconfigured decoupler
-                if (delaySeconds == 0)
+                if (timeToDecouple == 0)
                     modInUse = false;
                 else
                     modInUse = true;
@@ -122,8 +127,13 @@
 
         //Specify the delay in seconds in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 1200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)] //1200s - alows for 20 minutes; is that enough for a launch?
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
+
+        //Specify the delay in seconds in the Editor
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
+        private float delayMinutes = 0;
 
         //Shows the time until the engine is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
@@ -140,8 +150,8 @@
             //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
             if (state == StartState.PreLaunch)
             {
-                //Show me the numbers
-                timeToIgnite = delaySeconds;
+                //Add up the two parts of the overall delay and show me the numbers
+                timeToIgnite = delaySeconds + (delayMinutes * 60f);
 
                 //Obviously an unconfigured engine
                 if (delaySeconds == 0)
