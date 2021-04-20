@@ -31,7 +31,7 @@
 
         //Specify the delay in minutes in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0f, sigFigs = 1)]
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
@@ -50,9 +50,9 @@
         //This happens once
         public override void OnStart(StartState state)
         {
-            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
-            //if (state == StartState.PreLaunch)
-            //{
+            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+                {
                 //Add up the two parts of the overall delay and show me the numbers
                 timeToDecouple = totalDelay = delaySeconds + (delayMinutes * 60f);
 
@@ -61,7 +61,7 @@
                     modInUse = false;
                 else
                     modInUse = true;
-            //}
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
@@ -136,7 +136,7 @@
 
         //Specify the delay in minutes in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0f, sigFigs = 1)]
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
@@ -155,18 +155,18 @@
         //This happens once
         public override void OnStart(StartState state)
         {
-            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
-            //if (state == StartState.PreLaunch)
-            //{
-            //Add up the two parts of the overall delay and show me the numbers
-            timeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
+            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
+                //Add up the two parts of the overall delay and show me the numbers
+                timeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
 
                 //Obviously an unconfigured engine
                 if (delaySeconds == 0)
                     modInUse = false;
                 else
                     modInUse = true;
-            //}
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
@@ -248,9 +248,9 @@
         //This happens once
         public override void OnStart(StartState state)
         {
-            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
-           // if (state == StartState.PreLaunch)
-           // {
+            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
                 //Show me the numbers
                 flightHeightToSeparate = editorHeightToSeparate;
 
@@ -259,7 +259,7 @@
                     modInUse = false;
                 else
                     modInUse = true;
-           // }
+            }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
@@ -323,12 +323,12 @@
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
         //Specify the Height in kilometers in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 140f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
         private float editorHeightToSeparate = 0;
 
         //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false,  guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private float flightHeightToSeparate = 0;
 
         #endregion
@@ -339,9 +339,9 @@
         //This happens once
         public override void OnStart(StartState state)
         {
-            //enum of StartState - https://kerbalspaceprogram.com/api/class_part_module.html#ac6597127392e002b92f7427cf50244d3
-           // if (state == StartState.PreLaunch)
-           // {
+            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
                 //Show me the numbers
                 flightHeightToSeparate = editorHeightToSeparate;
 
@@ -350,8 +350,8 @@
                     modInUse = false;
                 else
                     modInUse = true;
-           // }
-           //Need to call that, in case other mods do stuff here
+            }
+            //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
 
