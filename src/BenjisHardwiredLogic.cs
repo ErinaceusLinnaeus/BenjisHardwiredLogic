@@ -25,12 +25,12 @@
         private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
         //Specify the delay in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [sec]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [sec]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
 
         //Specify the delay in minutes in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0f, sigFigs = 1)]
         private float delayMinutes = 0;
 
@@ -39,7 +39,7 @@
         private float totalDelay = 0;
 
         //Shows the time until the decoupler is activated in seconds, one decimal
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private double timeToDecouple = 0;
 
         #endregion
@@ -130,7 +130,7 @@
         private const string PAWIgnitorGroupName = "Benji's Delayed Ignitor";
 
         //Specify the delay in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
 
@@ -144,7 +144,7 @@
         private float totalDelay = 0;
 
         //Shows the time until the engine is activated in seconds, one decimal
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
         private double timeToIgnite = 0;
 
         #endregion
@@ -232,12 +232,12 @@
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
         //Specify the Height in kilometers in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 140f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
         private float editorHeightToSeparate = 0;
 
         //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private float flightHeightToSeparate = 0;
 
         #endregion
