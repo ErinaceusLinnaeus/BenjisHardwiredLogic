@@ -10,14 +10,14 @@
 ##### A ksp mod to "hardwire"-logic into rocket designs.
 ##### (At this point: decoupler-staging, fairing-separation and engine/rcs-ignition).
 
-##### Decouplers and also Fairingbases can have a delay assigned (up to 1200.0s (That's 20min)).
+##### Decouplers and also Fairingbases can have a delay assigned (up to 30min 59.9sec).
 ##### The same for Engines (solid and "liquid") and RCS thrusters.
 ##### Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
 
-##### Every assigned 0 will be ignored, is thus unconfigured/unset.
+##### Every assigned 0min 0.0sec for decouplers and engines, 0km for fairings is considered to be an unconfigured part and will not trigger any event.
 
 ##### Every other value will start counting down once the launchclamps are released.
-##### When reaching 0 the decoupler will automatically decouple, the engine light up and the RCS become active.
+##### When reaching 0min 0.0s the decoupler will automatically decouple, the engine light up and the RCS become active.
 ##### Fairings automatically separate at the set height (above sealevel).
 
 ##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages (or 2, if the 1st stage Engine is immidiatly at 100%, for example if you're using a solidMotor).
@@ -29,10 +29,10 @@
 #### Stages 0-4
             un-automated payload-stuff, whatever you wanna put into space...
 #### Stage 5
-            2x radialDecouplers connected to the solidMotors (delayed for 30.5s)
-            2ndStageEngine (2min burntime) (delayed for 63.8s)
-            2ndStageDecoupler between 1st and 2nd stage (delayed for 64.8s)
-            payloadDecoupler between 2nd stage and payload (delayed for 184s)
+            2x radialDecouplers connected to the solidMotors (delayed for 30.5sec)
+            2ndStageEngine (2min burntime) (delayed for 1min 3.8sec)
+            2ndStageDecoupler between 1st and 2nd stage (delayed for 1min 4.8sec)
+            payloadDecoupler between 2nd stage and payload (delayed for 2min 4.0sec)
             procFairing (set for 90km)
 ##### Stage 6
             launchClamps
@@ -45,7 +45,7 @@ So, let's look at what will happen, shall we?
 First spacebar fires the main engine.
 Once that is spooled up, spacebar fires the solidMotors and releases the launchClamps. Now the countdowns will start.
 At 30.5s the solidMotors will decouple
-At 63.8s the 2nd stage will fire.
-At 64.8s the 1st stage will be decoupled, hopefully the 2nd stage is spooled up by now.
+At 1min 3.8s the 2nd stage will fire.
+At 1min 4.8s the 1st stage will be decoupled, hopefully the 2nd stage is spooled up by now.
 At 90km the fairings will separate.
 2 minutes 4 seconds after lift off: The payload will be decoupled from the 2nd stage. 
