@@ -66,15 +66,19 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
-xcopy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic" /Y
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\" /Y
 
 del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-xcopy "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic" /Y
-
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\" /Y
 
 
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
-xcopy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic" /Y</PostBuildEvent>
+del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+
+
+</PostBuildEvent>
   </PropertyGroup>
 </Project>
