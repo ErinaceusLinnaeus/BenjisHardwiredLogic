@@ -1,7 +1,13 @@
 # BenjisHardwiredLogic
 ------------------------------------------------------------------------
 ## Version:
+##### v1.1
+------------------------------------------------------------------------
+## Changelod:
+##### v1.1
+##### -enable/disable button to disable funcionality instead of 0.0s/0km
 ##### v1.0
+##### initial release
 ------------------------------------------------------------------------
 ## Installation:
 ##### Simply drag the folder BenjisHardwiredLogic into your GameData folder.
@@ -10,11 +16,11 @@
 ##### A ksp mod to "hardwire"-logic into rocket designs.
 ##### (At this point: decoupler-staging, fairing-separation and engine/rcs-ignition).
 
+##### Every engine, decoupler or fairing is now disabled by default and can be enabled/disabled by the push of a button in the editor's PAW.
+
 ##### Decouplers and also Fairingbases can have a delay assigned (up to 30min 59.9sec).
 ##### The same for Engines (solid and "liquid") and RCS thrusters.
 ##### Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
-
-##### Every assigned 0min 0.0sec for decouplers and engines, 0km for fairings is considered to be an unconfigured part and will not trigger any event.
 
 ##### Every other value will start counting down once the launchclamps are released.
 ##### When reaching 0min 0.0s the decoupler will automatically decouple, the engine light up and the RCS become active.
