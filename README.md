@@ -49,9 +49,3 @@ At 1min 3.8s the 2nd stage will fire.
 At 1min 4.8s the 1st stage will be decoupled, hopefully the 2nd stage is spooled up by now.
 At 90km the fairings will separate.
 2 minutes 4 seconds after lift off: The payload will be decoupled from the 2nd stage.
-------------------------------------------------------------------------
-## Changelog:
-##### v1.1
-##### -enable/disable button to disable funcionality instead of 0.0s/0km
-##### v1.0
-##### -initial release
