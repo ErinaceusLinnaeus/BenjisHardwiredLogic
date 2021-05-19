@@ -34,7 +34,7 @@
             2ndStageDecoupler between 1st and 2nd stage (delayed for 1min 4.8sec)
             payloadDecoupler between 2nd stage and payload (delayed for 2min 4.0sec)
             procFairing (set for 90km)
-##### Stage 6
+#### Stage 6
             launchClamps
             2x solidMotors (30s burntime)
 #### Stage 7
