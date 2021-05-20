@@ -1,7 +1,10 @@
 # BenjisHardwiredLogic
 ------------------------------------------------------------------------
 ## Version:
-##### v1.0
+##### v1.1
+------------------------------------------------------------------------
+## Dependencies:
+##### ModuleManager.4.1.4.dll
 ------------------------------------------------------------------------
 ## Installation:
 ##### Simply drag the folder BenjisHardwiredLogic into your GameData folder.
@@ -10,11 +13,11 @@
 ##### A ksp mod to "hardwire"-logic into rocket designs.
 ##### (At this point: decoupler-staging, fairing-separation and engine/rcs-ignition).
 
+##### Every engine, decoupler or fairing is now disabled by default and can be enabled/disabled by the push of a button in the editor's PAW.
+
 ##### Decouplers and also Fairingbases can have a delay assigned (up to 30min 59.9sec).
 ##### The same for Engines (solid and "liquid") and RCS thrusters.
 ##### Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
-
-##### Every assigned 0min 0.0sec for decouplers and engines, 0km for fairings is considered to be an unconfigured part and will not trigger any event.
 
 ##### Every other value will start counting down once the launchclamps are released.
 ##### When reaching 0min 0.0s the decoupler will automatically decouple, the engine light up and the RCS become active.
@@ -34,7 +37,7 @@
             2ndStageDecoupler between 1st and 2nd stage (delayed for 1min 4.8sec)
             payloadDecoupler between 2nd stage and payload (delayed for 2min 4.0sec)
             procFairing (set for 90km)
-##### Stage 6
+#### Stage 6
             launchClamps
             2x solidMotors (30s burntime)
 #### Stage 7
@@ -48,4 +51,4 @@ At 30.5s the solidMotors will decouple
 At 1min 3.8s the 2nd stage will fire.
 At 1min 4.8s the 1st stage will be decoupled, hopefully the 2nd stage is spooled up by now.
 At 90km the fairings will separate.
-2 minutes 4 seconds after lift off: The payload will be decoupled from the 2nd stage. 
+2 minutes 4 seconds after lift off: The payload will be decoupled from the 2nd stage.
