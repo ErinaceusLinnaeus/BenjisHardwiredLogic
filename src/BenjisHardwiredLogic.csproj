@@ -72,10 +72,8 @@ del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\Benjis
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\" /Y
 
 
-del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
-del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
 

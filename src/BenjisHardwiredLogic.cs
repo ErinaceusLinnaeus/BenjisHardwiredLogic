@@ -22,15 +22,15 @@
 
         //Text, if functionality is disabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWDecouplerDisabled = "disconnected";
+        private const string PAWTextDisabled = "disconnected";
 
         //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWDecouplerEnabled = "connected";
+        private const string PAWTextEnabled = "connected";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
-            UI_Toggle(disabledText = PAWDecouplerDisabled, enabledText = PAWDecouplerEnabled)]
+            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
         private bool modInUse = false;
 
         //Specify the delay in seconds in the Editor
@@ -47,9 +47,9 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private float totalDelay = 0;
 
-        //Shows if the ignitor is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Decoupler active?", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
-        private bool PAWmodInUse = false;
+        //Shows if the decoupler is active
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        private string PAWmodInUse;
 
         //Shows the time until the decoupler is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
@@ -70,7 +70,10 @@
                 timeToDecouple = totalDelay = delaySeconds + (delayMinutes * 60f);
 
                 //Set the visible PAW variable 
-                PAWmodInUse = modInUse;
+                if (modInUse)
+                    PAWmodInUse = PAWTextEnabled;
+                else
+                    PAWmodInUse = PAWTextDisabled;
             }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
@@ -137,15 +140,15 @@
 
         //Text, if functionality is disabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWIgnitorDisabled = "disconnected";
+        private const string PAWTextDisabled = "disconnected";
 
         //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWIgnitorEnabled = "connected";
+        private const string PAWTextEnabled = "connected";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
-            UI_Toggle(disabledText = PAWIgnitorDisabled, enabledText = PAWIgnitorEnabled)]
+            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
         private bool modInUse = false;
 
         //Specify the delay in seconds in the Editor
@@ -163,8 +166,8 @@
         private float totalDelay = 0;
 
         //Shows if the ignitor is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Ignitor active?", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
-        private bool PAWmodInUse = false;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
+        private string PAWmodInUse;
 
         //Shows the time until the engine is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
@@ -185,7 +188,10 @@
                 timeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
 
                 //Set the visible PAW variable 
-                PAWmodInUse = modInUse;
+                if (modInUse)
+                    PAWmodInUse = PAWTextEnabled;
+                else
+                    PAWmodInUse = PAWTextDisabled;
             }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
@@ -249,15 +255,15 @@
 
         //Text, if functionality is disabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWFairingDisabled = "disconnected";
+        private const string PAWTextDisabled = "disconnected";
 
         //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWFairingEnabled = "connected";
+        private const string PAWTextEnabled = "connected";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = PAWFairingDisabled, enabledText = PAWFairingEnabled)]
+            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
         private bool modInUse = false;
 
         //Specify the Height in kilometers in the Editor
@@ -266,8 +272,8 @@
         private float editorHeightToSeparate = 0;
 
         //Shows if the fairing is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Fairing active?", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private bool PAWmodInUse = false;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        private string PAWmodInUse;
 
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
@@ -288,7 +294,10 @@
                 flightHeightToSeparate = editorHeightToSeparate;
 
                 //Set the visible PAW variable 
-                PAWmodInUse = modInUse;
+                if (modInUse)
+                    PAWmodInUse = PAWTextEnabled;
+                else
+                    PAWmodInUse = PAWTextDisabled;
             }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
@@ -348,14 +357,27 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
+        //Text, if functionality is disabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWTextDisabled = "disconnected";
+
+        //Text, if functionality is enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWTextEnabled = "connected";
+
+        //A button to enable or disable the function
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+        private bool modInUse = false;
+
         //Specify the Height in kilometers in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 140f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
         private float editorHeightToSeparate = 0;
 
         //Shows if the fairing is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Fairing active?", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private bool PAWmodInUse = false;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        private string PAWmodInUse;
 
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActiveEditor = false,  guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
@@ -376,7 +398,10 @@
                 flightHeightToSeparate = editorHeightToSeparate;
 
                 //Set the visible PAW variable 
-                PAWmodInUse = modInUse;
+                if (modInUse)
+                    PAWmodInUse = PAWTextEnabled;
+                else
+                    PAWmodInUse = PAWTextDisabled;
             }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
