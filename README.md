@@ -1,7 +1,7 @@
 # BenjisHardwiredLogic
 ------------------------------------------------------------------------
 ## Version:
-##### v1.1
+##### v1.2
 ------------------------------------------------------------------------
 ## Dependencies:
 ##### ModuleManager.4.1.4.dll
@@ -19,9 +19,11 @@
 ##### The same for Engines (solid and "liquid") and RCS thrusters.
 ##### Procedural Fairings (only RO, not the squad basegame thingies) can have a height between 0 and 140 km assigned.
 
-##### Every other value will start counting down once the launchclamps are released.
 ##### When reaching 0min 0.0s the decoupler will automatically decouple, the engine light up and the RCS become active.
 ##### Fairings automatically separate at the set height (above sealevel).
+
+##### If the messaging system is activated, 3 pre messages at -10s, -5s and -2s will be shown on screen
+##### Also a on screen message at the actual decoupling, ignition or fairing separation are shown
 
 ##### This will save a lot of space in the StagingList because the whole launcher can be put into 3 stages (or 2, if the 1st stage Engine is immidiatly at 100%, for example if you're using a solidMotor).
 ##### But maybe you should just leave your StagingList the way it always was. Else you mess up all the dV and burntime readouts (KER and MJ). The other upside is, you can always stage, decouple and separate fairings ahead of countdown (in case of engine failures). This mod does not prevent that.
