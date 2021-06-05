@@ -20,13 +20,19 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
-        //Text, if functionality is disabled
+        //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextDisabled = "disconnected";
 
-        //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextEnabled = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingDisabled = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingEnabled = "active";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
@@ -55,6 +61,19 @@
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private double timeToDecouple = 0;
 
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+        private bool eventMessaging = true;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decoupling", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+            UI_ChooseOption(options = new string[5] { "1st stage", "2nd stage", "3rd stage", "Booster", "Payload" })]
+        private string eventMessage = "1st stage";
+
+        //A small variable to manage the onScreen Messages
+        private char nextMessageStep = (char)0;
+
         #endregion
 
 
@@ -65,7 +84,7 @@
         {
             //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
-                {
+            {
                 //Add up the two parts of the overall delay and show me the numbers
                 timeToDecouple = totalDelay = delaySeconds + (delayMinutes * 60f);
 
@@ -104,9 +123,28 @@
                     //Calculate how long until the decoupler decouples
                     timeToDecouple = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
 
+                    //Time to announce the upcoming decouple event
+                    if (nextMessageStep == 0 && timeToDecouple <= 10)
+                    {
+                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 1 && timeToDecouple <= 5)
+                    {
+                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 2 && timeToDecouple <= 2)
+                    {
+                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+
                     //If it's time to decouple...
                     if (timeToDecouple <= 0)
                     {
+                        //Showing the actual decouple message
+                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage, 3f, ScreenMessageStyle.UPPER_CENTER);
                         //Stop the countdown
                         countingDown = false;
                         //...do it already
@@ -130,6 +168,7 @@
         //Did the launch happen?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool vesselLaunched = false;
+
         //Did the countdown start?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool countingDown = false;
@@ -138,13 +177,19 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWIgnitorGroupName = "Benji's Delayed Ignitor";
 
-        //Text, if functionality is disabled
+        //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextDisabled = "disconnected";
 
-        //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextEnabled = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingDisabled = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingEnabled = "active";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
@@ -172,6 +217,19 @@
         //Shows the time until the engine is activated in seconds, one decimal
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
         private double timeToIgnite = 0;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+        private bool eventMessaging = true;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Igniting", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_ChooseOption(options = new string[4] { "1st stage", "2nd stage", "3rd stage", "Booster" })]
+        private string eventMessage = "1st stage";
+
+        //A small variable to manage the onScreen Messages
+        private char nextMessageStep = (char)0;
 
         #endregion
 
@@ -222,9 +280,28 @@
                     //Calculate how long until the decoupler decouples
                     timeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
 
+                    //Time to announce the upcoming ignition event
+                    if (nextMessageStep == 0 && timeToIgnite <= 10)
+                    {
+                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_LEFT);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 1 && timeToIgnite <= 5)
+                    {
+                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_LEFT);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 2 && timeToIgnite <= 2)
+                    {
+                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_LEFT);
+                        nextMessageStep++;
+                    }
+
                     //If it's time to decouple...
                     if (timeToIgnite <= 0)
                     {
+                        //Showing the actual ignition message
+                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
                         //Stop the countdown
                         countingDown = false;
                         //...do it already
@@ -245,6 +322,7 @@
         //Did the launch happen?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool vesselLaunched = false;
+
         //Do we still climb?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool checkingHeight = false;
@@ -253,13 +331,19 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
-        //Text, if functionality is disabled
+        //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextDisabled = "disconnected";
 
-        //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextEnabled = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingDisabled = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingEnabled = "active";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -278,6 +362,16 @@
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private float flightHeightToSeparate = 0;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+        private bool eventMessaging = true;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_ChooseOption(options = new string[3] { "Payload", "3rd stage", "2nd stage" })]
+        private string eventMessage = "Payload";
 
         #endregion
 
@@ -326,6 +420,8 @@
                     //Are we high enough to separate...
                     if (part.localRoot.vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
+                        //Showing the jettison message
+                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_RIGHT);
                         //Stop checking the height
                         checkingHeight = false;
                         //...do it already
@@ -349,6 +445,7 @@
         //Did the launch happen?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool vesselLaunched = false;
+
         //Do we still climb?
         [KSPField(isPersistant = true, guiActive = false)]
         private bool checkingHeight = false;
@@ -357,13 +454,19 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
-        //Text, if functionality is disabled
+        //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextDisabled = "disconnected";
 
-        //Text, if functionality is enabled
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWTextEnabled = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingDisabled = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingEnabled = "active";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -382,6 +485,16 @@
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActiveEditor = false,  guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private float flightHeightToSeparate = 0;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+        private bool eventMessaging = true;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_ChooseOption(options = new string[3] {"Payload", "3rd stage", "2nd stage"})]
+        private string eventMessage = "Payload";
 
         #endregion
 
@@ -430,6 +543,8 @@
                     //Are we high enough to separate...
                     if (part.localRoot.vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
+                        //Showing the Jettison message
+                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_RIGHT);
                         //Stop checking the height
                         checkingHeight = false;
                         //...do it already
