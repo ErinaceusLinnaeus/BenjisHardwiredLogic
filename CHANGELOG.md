@@ -1,7 +1,8 @@
 ## Changelog:
 ##### v1.2
+##### -OnScreen messaging system: can also be turned off
 ##### -OnScreen messaging system: shows 3 pre messages before decoupling and igniting at -10s, -5s and -2s
-#####                             shows a message at decoupling, igniting and fairing separation
+##### -OnScreen messaging system: shows a message at decoupling, igniting and fairing separation
 ##### v1.1.1
 ##### -inflight PAW change: Circuits are: connected/disconnected instead of active?: true/false
 ##### v1.1
