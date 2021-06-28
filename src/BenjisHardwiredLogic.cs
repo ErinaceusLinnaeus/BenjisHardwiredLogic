@@ -1,5 +1,6 @@
 ﻿namespace BenjisHardwiredLogic
 {
+    using System;
     public class BenjisDelayedDecoupler : PartModule
     {
         #region Fields
@@ -107,7 +108,7 @@
                 if (!vesselLaunched)
                 {
                     //Once launched the mission time adds up
-                    if (part.localRoot.vessel.missionTime > 0)
+                    if (vessel.missionTime > 0)
                     {
                         //Make sure not to jump in here again
                         vesselLaunched = true;
@@ -123,21 +124,25 @@
                     //Calculate how long until the decoupler decouples
                     timeToDecouple = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
 
-                    //Time to announce the upcoming decouple event
-                    if (nextMessageStep == 0 && timeToDecouple <= 10)
+                    //Does the user want messages?
+                    if (eventMessaging)
                     {
-                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                        nextMessageStep++;
-                    }
-                    else if (nextMessageStep == 1 && timeToDecouple <= 5)
-                    {
-                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
-                        nextMessageStep++;
-                    }
-                    else if (nextMessageStep == 2 && timeToDecouple <= 2)
-                    {
-                        ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
-                        nextMessageStep++;
+                        //Time to announce the upcoming decouple event
+                        if (nextMessageStep == 0 && timeToDecouple <= 10)
+                        {
+                            ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 1 && timeToDecouple <= 5)
+                        {
+                            ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 2 && timeToDecouple <= 2)
+                        {
+                            ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
                     }
 
                     //If it's time to decouple...
@@ -264,7 +269,7 @@
                 if (!vesselLaunched)
                 {
                     //Once launched the mission time adds up
-                    if (part.localRoot.vessel.missionTime > 0)
+                    if (vessel.missionTime > 0)
                     {
                         //Make sure not to jump in here again
                         vesselLaunched = true;
@@ -280,21 +285,25 @@
                     //Calculate how long until the decoupler decouples
                     timeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
 
-                    //Time to announce the upcoming ignition event
-                    if (nextMessageStep == 0 && timeToIgnite <= 10)
+                    //Does the user want messages?
+                    if (eventMessaging)
                     {
-                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_LEFT);
-                        nextMessageStep++;
-                    }
-                    else if (nextMessageStep == 1 && timeToIgnite <= 5)
-                    {
-                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_LEFT);
-                        nextMessageStep++;
-                    }
-                    else if (nextMessageStep == 2 && timeToIgnite <= 2)
-                    {
-                        ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_LEFT);
-                        nextMessageStep++;
+                        //Time to announce the upcoming ignition event
+                        if (nextMessageStep == 0 && timeToIgnite <= 10)
+                        {
+                            ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 1 && timeToIgnite <= 5)
+                        {
+                            ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 2 && timeToIgnite <= 2)
+                        {
+                            ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
                     }
 
                     //If it's time to decouple...
@@ -406,7 +415,7 @@
                 if (!vesselLaunched)
                 {
                     //Once launched the mission time adds up
-                    if (part.localRoot.vessel.missionTime > 0)
+                    if (vessel.missionTime > 0)
                     {
                         //Make sure not to jump in here again
                         vesselLaunched = true;
@@ -418,10 +427,15 @@
                 else if (checkingHeight)
                 {
                     //Are we high enough to separate...
-                    if (part.localRoot.vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
+                    if (vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
-                        //Showing the jettison message
-                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_RIGHT);
+                        //Does the user want messages?
+                        if (eventMessaging)
+                        {
+                            //Showing the jettison message
+                            ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
+                        }
+
                         //Stop checking the height
                         checkingHeight = false;
                         //...do it already
@@ -529,7 +543,7 @@
                 if (!vesselLaunched)
                 {
                     //Once launched the mission time adds up
-                    if (part.localRoot.vessel.missionTime > 0)
+                    if (vessel.missionTime > 0)
                     {
                         //Make sure not to jump in here again
                         vesselLaunched = true;
@@ -541,10 +555,15 @@
                 else if (checkingHeight)
                 {
                     //Are we high enough to separate...
-                    if (part.localRoot.vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
+                    if (vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
+                        //Does the user want messages?
+                        if (eventMessaging)
+                        {
                         //Showing the Jettison message
-                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_RIGHT);
+                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
+                        }
+
                         //Stop checking the height
                         checkingHeight = false;
                         //...do it already
