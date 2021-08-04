@@ -10,14 +10,19 @@ namespace BenjisHardwiredLogic
     {
         #region HelperFunctions
 
+        public static double GetPI()
+        {
+            return 3.14159265358979323846;
+        }
+
         public static double degToRad(double deg)
         {
-            return ((Math.PI / 180d) * deg);
+            return ((GetPI() / 180d) * deg);
         }
         
         public static double radToDeg(double rad)
         {
-            return ((180d / Math.PI) * rad);
+            return ((180d / GetPI()) * rad);
         }
 
         public static double scalarProduct(Vector3d vector1, Vector3d vector2)
@@ -38,6 +43,15 @@ namespace BenjisHardwiredLogic
             vector2 = vector2.normalized;
 
             return radToDeg(Math.Acos(scalarProduct(vector1, vector2)));
+        }
+        public static double limitAbs(double one, double two)
+        {
+            if (one > two)
+                return two;
+            if ((-1 * one) > two)
+                return (-1 * two);
+            else
+                return one;
         }
         #endregion
     }

@@ -1,4 +1,7 @@
 ## Changelog:
+##### v1.3
+##### Ascent Guidance:
+##### - Input a desired perigee, apogee and inclination. Sit back and relax (and watch your rocket disintegrate itself fully automated)
 ##### v1.2.1
 ##### CHANGELOG & README:
 ##### - Added to the release zip
