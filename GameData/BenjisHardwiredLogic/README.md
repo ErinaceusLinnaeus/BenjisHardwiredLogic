@@ -1,10 +1,10 @@
 # BenjisHardwiredLogic
 ------------------------------------------------------------------------
 ## Version:
-##### v1.2.1
+##### v1.2.2
 ------------------------------------------------------------------------
 ## Dependencies:
-##### ModuleManager.4.1.4.dll
+##### ModuleManager.4.2.2.dll
 ------------------------------------------------------------------------
 ## Installation:
 ##### Simply drag the folder BenjisHardwiredLogic into your GameData folder.

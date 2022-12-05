@@ -66,33 +66,47 @@
       <Link>.editorconfig</Link>
     </None>
     <None Include="BenjisHardwiredLogic.cfg" />
+    <None Include="Properties\CHANGELOG.md" />
+    <None Include="Properties\README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
-copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-
+    <PostBuildEvent>//BenjisHardwiredLogic.dll
+//delete old files
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
 del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+//copy new files
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
-
-del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-
-del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
-
-
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
+//BenjisHardwiredLogic.cfg
+//delete old files
+del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+//copy new files
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
-del /f "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\GameData\BenjisHardwiredLogic\CHANGELOG.md"
-copy "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\CHANGELOG.md" "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\GameData\BenjisHardwiredLogic\" /Y
+//CHANGELOG.md
+//delete old files
+del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+//copy new files
+copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
 
-del /f "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\GameData\BenjisHardwiredLogic\README.md"
-copy "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\README.md" "C:\Users\Benji\Dropbox\Benji\GitHub\BenjisHardwiredLogic\GameData\BenjisHardwiredLogic\" /Y
-
-
-</PostBuildEvent>
+//README.md
+//delete old files
+del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\README.md"
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\README.md"
+del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\README.md"
+//copy new files
+copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\README.md" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

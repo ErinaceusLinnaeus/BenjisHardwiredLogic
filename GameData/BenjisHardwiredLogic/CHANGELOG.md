@@ -1,4 +1,11 @@
 ## Changelog:
+##### v1.2.2
+##### MORE MESSAGING OPTIONS:
+##### - Added a rare 4th Stage and a Spin-Motor Option for Igniting and Seperating
+##### - Grammar update: Editor: Igniting -> Ignite
+##### - Grammar update: Editor: Decoupling -> Decouple
+##### - Grammar update: Messaging: Jettison -> Jettisoning
+##### - RCS with its own correct grammar
 ##### v1.2.1
 ##### CHANGELOG & README:
 ##### - Added to the release zip
