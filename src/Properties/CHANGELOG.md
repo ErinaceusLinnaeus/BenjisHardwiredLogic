@@ -5,6 +5,7 @@
 ##### - Grammar update: Editor: Igniting -> Ignite
 ##### - Grammar update: Editor: Decoupling -> Decouple
 ##### - Grammar update: Messaging: Jettison -> Jettisoning
+##### - RCS with its own correct grammar
 ##### v1.2.1
 ##### CHANGELOG & README:
 ##### - Added to the release zip

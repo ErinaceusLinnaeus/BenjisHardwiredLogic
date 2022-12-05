@@ -324,6 +324,168 @@
 
     }
 
+    public class BenjisDelayedRCS : PartModule//ModuleRCS*
+    {
+        #region Fields
+
+        //Saving UniversalTime into launchTime when the Vessel get's launched
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double launchTime = 0;
+
+        //Did the launch happen?
+        [KSPField(isPersistant = true, guiActive = false)]
+        private bool vesselLaunched = false;
+
+        //Did the countdown start?
+        [KSPField(isPersistant = true, guiActive = false)]
+        private bool countingDown = false;
+
+        //Headline name for the GUI
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWIgnitorGroupName = "Benji's Delayed RCS";
+
+        //Text, if functionality is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWTextDisabled = "disconnected";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWTextEnabled = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingDisabled = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string MessagingEnabled = "active";
+
+        //A button to enable or disable the function
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+        private bool modInUse = false;
+
+        //Specify the delay in seconds in the Editor
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
+        private float delaySeconds = 0;
+
+        //Specify the delay in minutes in the Editor
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
+        private float delayMinutes = 0;
+
+        //Seconds and Minutes (*60) added
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float totalDelay = 0;
+
+        //Shows if the ignitor is active
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
+        private string PAWmodInUse;
+
+        //Shows the time until the engine is activated in seconds, one decimal
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until RCS", guiFormat = "F1", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName)]
+        private double timeToIgnite = 0;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+        private bool eventMessaging = true;
+
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Activate", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_ChooseOption(options = new string[1] { "RCS" })]
+        private string eventMessage = "RCS";
+
+        //A small variable to manage the onScreen Messages
+        private char nextMessageStep = (char)0;
+
+        #endregion
+
+
+        #region Overrides
+
+        //This happens once
+        public override void OnStart(StartState state)
+        {
+            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
+                //Add up the two parts of the overall delay and show me the numbers
+                timeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
+
+                //Set the visible PAW variable 
+                if (modInUse)
+                    PAWmodInUse = PAWTextEnabled;
+                else
+                    PAWmodInUse = PAWTextDisabled;
+            }
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
+
+        //This happens every frame
+        public override void OnUpdate()
+        {
+            if (modInUse)
+            {
+                //Check if the Vessel is still attached to the launch clamps
+                if (!vesselLaunched)
+                {
+                    //Once launched the mission time adds up
+                    if (vessel.missionTime > 0)
+                    {
+                        //Make sure not to jump in here again
+                        vesselLaunched = true;
+                        //Set the launch time
+                        launchTime = Planetarium.GetUniversalTime();
+                        //Start the Countdown
+                        countingDown = true;
+                    }
+                }
+                //Check if the countdown started... if the Vessel is launched
+                else if (countingDown)
+                {
+                    //Calculate how long until the decoupler decouples
+                    timeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
+
+                    //Does the user want messages?
+                    if (eventMessaging)
+                    {
+                        //Time to announce the upcoming ignition event
+                        if (nextMessageStep == 0 && timeToIgnite <= 10)
+                        {
+                            ScreenMessages.PostScreenMessage("Activating " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 1 && timeToIgnite <= 5)
+                        {
+                            ScreenMessages.PostScreenMessage("Activating " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                        else if (nextMessageStep == 2 && timeToIgnite <= 2)
+                        {
+                            ScreenMessages.PostScreenMessage("Activating " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                            nextMessageStep++;
+                        }
+                    }
+
+                    //If it's time to decouple...
+                    if (timeToIgnite <= 0)
+                    {
+                        //Showing the actual ignition message
+                        ScreenMessages.PostScreenMessage("Activating " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
+                        //Stop the countdown
+                        countingDown = false;
+                        //...do it already
+                        part.force_activate();
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+    }
+
     public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
     {
         #region Fields
