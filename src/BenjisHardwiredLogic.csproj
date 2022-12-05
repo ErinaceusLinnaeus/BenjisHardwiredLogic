@@ -69,18 +69,17 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
-copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\" /Y
+    <PostBuildEvent>del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 
-del /f "B:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
-copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "B:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
 
-del /f "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\Kerbal Space Program 1.10\GameData\BenjisHardwiredLogic\" /Y
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 
-
-del /f "B:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
 
 
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y

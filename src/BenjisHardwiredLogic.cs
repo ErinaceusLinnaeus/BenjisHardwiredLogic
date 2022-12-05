@@ -1,11 +1,11 @@
 ﻿namespace BenjisHardwiredLogic
 {
     using System;
-    public class BenjisDelayedDecoupler : PartModule
+    public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
     {
         #region Fields
 
-        //Saving UniversalTime into launchTime when the Vessel getÞs launched
+        //Saving UniversalTime into launchTime when the Vessel get's launched
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
 
@@ -68,8 +68,8 @@
         private bool eventMessaging = true;
 
         //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decoupling", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
-            UI_ChooseOption(options = new string[5] { "1st stage", "2nd stage", "3rd stage", "Booster", "Payload" })]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+            UI_ChooseOption(options = new string[7] { "1st stage", "2nd stage", "3rd stage", "4th Stage", "Booster", "Spin-Motor", "Payload" })]
         private string eventMessage = "1st stage";
 
         //A small variable to manage the onScreen Messages
@@ -162,11 +162,11 @@
         #endregion
     }
 
-    public class BenjisDelayedIgnitor : PartModule//ModuleEngines
+    public class BenjisDelayedIgnitor : PartModule//ModuleEngines*
     {
         #region Fields
 
-        //Saving UniversalTime into launchTime when the Vessel getÞs launched
+        //Saving UniversalTime into launchTime when the Vessel get's launched
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
 
@@ -229,8 +229,8 @@
         private bool eventMessaging = true;
 
         //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Igniting", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
-            UI_ChooseOption(options = new string[4] { "1st stage", "2nd stage", "3rd stage", "Booster" })]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Ignite", groupName = PAWIgnitorGroupName, groupDisplayName = PAWIgnitorGroupName),
+            UI_ChooseOption(options = new string[6] { "1st stage", "2nd stage", "3rd stage", "4th Stage", "Booster", "Spin-Motor" })]
         private string eventMessage = "1st stage";
 
         //A small variable to manage the onScreen Messages
@@ -324,7 +324,7 @@
 
     }
 
-    public class BenjisFairingSeparator : PartModule
+    public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
     {
         #region Fields
 
@@ -379,7 +379,7 @@
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_ChooseOption(options = new string[3] { "Payload", "3rd stage", "2nd stage" })]
+            UI_ChooseOption(options = new string[4] { "Payload", "4th Stage", "3rd stage", "2nd stage" })]
         private string eventMessage = "Payload";
 
         #endregion
@@ -433,7 +433,7 @@
                         if (eventMessaging)
                         {
                             //Showing the jettison message
-                            ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
+                            ScreenMessages.PostScreenMessage("Jettisoning " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
                         }
 
                         //Stop checking the height
