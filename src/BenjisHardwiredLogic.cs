@@ -5,7 +5,9 @@
     using Smooth.Collections;
     using Smooth.Compare;
     using System;
+    using System.Collections;
     using System.Threading;
+    using UnityEngine;
     using static FinePrint.ContractDefs;
 
     public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
@@ -400,6 +402,73 @@
             Fields[nameof(PAWtargetApside)].guiActive = false;
         }
 
+        //Gets called every .1 seconds and counts down to 0
+        IEnumerator coroutinePostLaunch()
+        {
+            for (;;)
+            {
+                //ScreenMessages.PostScreenMessage("inside Post Launch.", 3.0f, ScreenMessageStyle.UPPER_CENTER);
+                //Calculate how long until the engine ignites
+                PAWtimeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
+
+                if (PAWtimeToIgnite <= 0)
+                {
+                    igniteEngine();
+
+                    StopCoroutine(coroutinePostLaunch());
+                }
+
+                yield return new WaitForSecondsRealtime(.1f);
+            }
+        }
+
+        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
+        IEnumerator coroutinePreApsideWait()
+        {
+            for (;;)
+            {
+                //ScreenMessages.PostScreenMessage("waiting Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                    StartCoroutine(coroutinePreApside());
+
+                yield return new WaitForSecondsRealtime(5.0f);
+            }
+        }
+
+        //Gets called every .1 seconds and counts down to 0
+        IEnumerator coroutinePreApside()
+        {
+            for (;;)
+            {
+                //ScreenMessages.PostScreenMessage("inside Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                //Calculate how long until the engine ignites
+                PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
+
+                if (PAWtimeToIgnite <= 0)
+                {
+                    igniteEngine();
+
+                    StopCoroutine(coroutinePreApside());
+                }
+
+                yield return new WaitForSecondsRealtime(.1f);
+            }
+        }
+
+        private void igniteEngine()
+        {
+            //Starts the engine
+            part.force_activate();
+            //Hide the timeToIgnition once the engine burns
+            Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+
+            //Does the user want messages?
+            if (eventMessaging)
+            {
+                //Showing the actual ignition message
+                ScreenMessages.PostScreenMessage("Igniting " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
+            }
+        }
 
         private void isLaunched(EventReport report)
         {
@@ -411,7 +480,21 @@
                                         int 	stageNumber = 0,
                                         string 	customMsg = "" 
                                         )	*/
-            ScreenMessages.PostScreenMessage("LAUNCHED.", 10.0f, ScreenMessageStyle.UPPER_CENTER);
+            //ScreenMessages.PostScreenMessage("LAUNCHED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            if (delayMode == "Post Launch")
+            {
+                //ScreenMessages.PostScreenMessage("going into Post Launch.", 1.0f, ScreenMessageStyle.UPPER_CENTER);
+                StartCoroutine(coroutinePostLaunch());
+            }
+            else if (delayMode == "Pre Apside")
+            {
+                //ScreenMessages.PostScreenMessage("going into Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                StartCoroutine(coroutinePreApsideWait());
+            }
 
         }
         private void isDead(Part part)
@@ -424,7 +507,7 @@
                                         int 	stageNumber = 0,
                                         string 	customMsg = "" 
                                         )	*/
-            ScreenMessages.PostScreenMessage("DIED.", 10.0f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage("DIED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
 
         }
 
@@ -476,29 +559,6 @@
                 {
                     if (!engineLit)
                     {
-                        //Check if the Vessel is still attached to the launch clamps
-                        if (launchTime == 0 && vessel.missionTime > 0)
-                        {
-                            //Only do this once
-                            //Set the launch time
-                            launchTime = Planetarium.GetUniversalTime();
-
-                            if (delayMode == "Post Launch")
-                            {
-                                //Calculate how long until the engine ignites
-                                PAWtimeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
-                            }
-                        }
-
-                        if (delayMode == "Pre Apside")
-                        {
-                            if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
-                            {
-                                //Calculate how long until the engine ignites
-                                PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
-                            }
-                        }
-
                         //Does the user want messages?
                         if (eventMessaging)
                         {
@@ -523,17 +583,20 @@
                         //If it's time to ignite...
                         if (PAWtimeToIgnite <= 0)
                         {
+                            /*
                             //...do it already
                             part.force_activate();
                             engineLit = true;
                             //Hide the timeToIgnition once the engine burns
                             Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+                            */
+                            /*
                             //Does the user want messages?
                             if (eventMessaging)
                             {
                                 //Showing the actual ignition message
                                 ScreenMessages.PostScreenMessage("Igniting " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
-                            }
+                            }*/
 
                             //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
                             if (eventMessage == "Apogee Kick Stage" && apKickMode == "Cut-Off")
