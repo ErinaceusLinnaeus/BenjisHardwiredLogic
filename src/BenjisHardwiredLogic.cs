@@ -6,6 +6,7 @@
     using Smooth.Compare;
     using System;
     using System.Collections;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using UnityEngine;
     using static FinePrint.ContractDefs;
@@ -28,22 +29,22 @@
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextDisabled = "disconnected";
+        private const string StringDisconnected = "disconnected";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextEnabled = "connected";
+        private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingDisabled = "inactive";
+        private const string StringInactive = "inactive";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingEnabled = "active";
+        private const string StringActive = "active";
 
         //The PAW fields in the editor
         //A button to enable or disable the module
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Toggle the mode between post launch delay and a pre Apside delay
@@ -72,7 +73,7 @@
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
         private bool eventMessaging = true;
 
         //The PAW fields in Flight
@@ -109,14 +110,14 @@
                 //Set the visible PAW variable 
                 if (modInUse)
                 {
-                    PAWmodInUse = PAWTextEnabled;
+                    PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
                     PAWstage = eventMessage;
                 }
                 else
                 {
-                    PAWmodInUse = PAWTextDisabled;
+                    PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
                     Fields[nameof(PAWtimeToDecouple)].guiActive = false;
                     Fields[nameof(PAWdelayMode)].guiActive = false;
@@ -129,7 +130,7 @@
         private void endMod()
         {
             modInUse = false;
-            PAWmodInUse = PAWTextDisabled;
+            PAWmodInUse = StringDisconnected;
             //Disable all text for inFlight Information
             Fields[nameof(PAWtimeToDecouple)].guiActive = false;
             Fields[nameof(PAWdelayMode)].guiActive = false;
@@ -256,73 +257,84 @@
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextDisabled = "disconnected";
+        private const string StringDisconnected = "disconnected";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextEnabled = "connected";
+        private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingDisabled = "inactive";
+        private const string StringInactive = "inactive";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingEnabled = "active";
+        private const string StringActive = "active";
 
         //The PAW fields in the editor
         //A button to enable or disable the module
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Toggle the mode between post launch delay and a pre Apside delay
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_ChooseOption(options = new string[2] { "Post Launch", "Pre Apside" })]
         private string delayMode = "Post Launch";
 
+        //A button to enable the Cut-Off at Apogee
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Cut-Off @ Apogee:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool cutAtApogee = false;
+
+        //Set which initial apogee the stage should aim for
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Apogee [km]", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 70f, maxValue = 450000f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 10f, sigFigs = 0)]
+        private float targetApogee = 450;
+
         //Specify the delay in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [sec]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
 
         //Specify the delay in minutes in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private float totalDelay = 0;
 
         //Name what the engine will be called during event messaging
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Ignite", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Engine", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_ChooseOption(options = new string[10] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Spin-/Ullage-Motor", "Apogee Kick Stage" })]
-        private string eventMessage = "1st Stage";
+        private string engineType = "1st Stage";
 
         //Specify how to treat the kick stage
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Kick Stage Mode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Kick Stage Mode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_ChooseOption(options = new string[3] { "Burn-Out", "Cut-Off", "Circularize" })]
         private string apKickMode = "Burn-Out";
 
         //Set which apside the kick stage should aim for
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Apside [km]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 70f, maxValue = 450000f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 10f, sigFigs = 0)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Apside [km]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 70f, maxValue = 450000f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 10f, sigFigs = 0)]
         private float targetApside = 0;
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
-        private bool eventMessaging = true;
 
         //The PAW fields in Flight
         //Shows if the igniter is active
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWmodInUse;
         //Shows the time until the engine is activated in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiUnits = "s", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private double PAWtimeToIgnite = 0;
         //Shows what delay mode this engine is in
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWdelayMode;
+        //Shows if the stage will cut at Apogee
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Cut @ Apogee", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        private string PAWcutAtApogee;
+        //Shows what Apogee we aim for
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Target Apogee", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        private string PAWtargetApogee;
         //Shows what type of engine this is
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Engine", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWengine;
@@ -332,6 +344,12 @@
         //Shows what Apside we aim for
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Target Apside", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWtargetApside;
+
+        //Shown in the Editor and in Flight
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool eventMessaging = true;
 
         //A small variable to manage the onScreen Messages
         private char nextMessageStep = (char)0;
@@ -355,12 +373,24 @@
                 //Set the visible PAW variable 
                 if (modInUse)
                 {
-                    PAWmodInUse = PAWTextEnabled;
+                    PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
-                    PAWengine = eventMessage;
+                    if (delayMode == "Post Launch" && cutAtApogee)
+                    {
+                        PAWcutAtApogee = StringActive;
+                        PAWtargetApogee = string.Format("{0:N0}", targetApogee);
+                    }
+                    else if (delayMode == "Pre Apside")
+                    {
+                        cutAtApogee = false;
+                        Fields[nameof(PAWcutAtApogee)].guiActive = false;
+                        Fields[nameof(PAWtargetApogee)].guiActive = false;
+                    }
+
+                    PAWengine = engineType;
                     //Show the kick mode if it is a kick stage
-                    if (eventMessage == "Apogee Kick Stage")
+                    if (engineType == "Apogee Kick Stage")
                         PAWkickMode = apKickMode;
                     //or hide it
                     else
@@ -374,7 +404,7 @@
                 }
                 else
                 {
-                    PAWmodInUse = PAWTextDisabled;
+                    PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
                     Fields[nameof(PAWtimeToIgnite)].guiActive = false;
                     Fields[nameof(PAWdelayMode)].guiActive = false;
@@ -390,13 +420,20 @@
 
         }
 
+        private void initEditor()
+        {
+            GameEvents.onEditorShipModified.Add(updateEditorPAW);
+        }
+
         private void endMod()
         {
             modInUse = false;
-            PAWmodInUse = PAWTextDisabled;
+            PAWmodInUse = StringDisconnected;
             //Disable all text for inFlight Information
             Fields[nameof(PAWtimeToIgnite)].guiActive = false;
             Fields[nameof(PAWdelayMode)].guiActive = false;
+            Fields[nameof(PAWcutAtApogee)].guiActive = false;
+            Fields[nameof(PAWtargetApogee)].guiActive = false;
             Fields[nameof(PAWengine)].guiActive = false;
             Fields[nameof(PAWkickMode)].guiActive = false;
             Fields[nameof(PAWtargetApside)].guiActive = false;
@@ -466,7 +503,7 @@
             if (eventMessaging)
             {
                 //Showing the actual ignition message
-                ScreenMessages.PostScreenMessage("Igniting " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("Igniting " + engineType, 3f, ScreenMessageStyle.UPPER_LEFT);
             }
         }
 
@@ -509,24 +546,52 @@
                                         )	*/
             ScreenMessages.PostScreenMessage("DIED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
 
+            StopAllCoroutines();
+
         }
 
         //This happens once
         public override void OnStart(StartState state)
         {
-            initMod();
-            
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                initMod();
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
         }
 
-        //This happens every visual frame (even for non active (not staged) parts)
-        public void Update()
+        //Tweak what fields are shown in the editor
+        private void updateEditorPAW(ShipConstruct ship)
         {
-            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+            if (modInUse)
             {
+                totalDelay = delaySeconds + (delayMinutes * 60f);
+
+                Fields[nameof(delaySeconds)].guiActiveEditor = true;
+                Fields[nameof(delayMinutes)].guiActiveEditor = true;
+                Fields[nameof(totalDelay)].guiActiveEditor = true;
+
+                Fields[nameof(delayMode)].guiActiveEditor = true;
+
+                if (delayMode == "Post Launch")
+                {
+                    Fields[nameof(cutAtApogee)].guiActiveEditor = true;
+                    if (cutAtApogee)
+                        Fields[nameof(targetApogee)].guiActiveEditor = true;
+                    else
+                        Fields[nameof(targetApogee)].guiActiveEditor = false;
+                }
+                else
+                {
+                    Fields[nameof(cutAtApogee)].guiActiveEditor = false;
+                    Fields[nameof(targetApogee)].guiActiveEditor = false;
+                }
+                Fields[nameof(engineType)].guiActiveEditor = true;
                 //Show the Kick Stage Mode if the engine will be a kick stage
-                if (eventMessage == "Apogee Kick Stage")
+                if (engineType == "Apogee Kick Stage")
                 {
                     Fields[nameof(apKickMode)].guiActiveEditor = true;
 
@@ -546,6 +611,20 @@
                     Fields[nameof(apKickMode)].guiActiveEditor = false;
                     Fields[nameof(targetApside)].guiActiveEditor = false;
                 }
+                Fields[nameof(eventMessaging)].guiActiveEditor = true;
+            }
+            else
+            {
+                Fields[nameof(delaySeconds)].guiActiveEditor = false;
+                Fields[nameof(delayMinutes)].guiActiveEditor = false;
+                Fields[nameof(totalDelay)].guiActiveEditor = false;
+                Fields[nameof(delayMode)].guiActiveEditor = false;
+                Fields[nameof(cutAtApogee)].guiActiveEditor = false;
+                Fields[nameof(targetApogee)].guiActiveEditor = false;
+                Fields[nameof(engineType)].guiActiveEditor = false;
+                Fields[nameof(apKickMode)].guiActiveEditor = false;
+                Fields[nameof(targetApside)].guiActiveEditor = false;
+                Fields[nameof(eventMessaging)].guiActiveEditor = false;
             }
         }
 
@@ -565,17 +644,17 @@
                             //Time to announce the upcoming ignition event
                             if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
                             {
-                                ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
                                 nextMessageStep++;
                             }
                             else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
                             {
-                                ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
                                 nextMessageStep++;
                             }
                             else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
                             {
-                                ScreenMessages.PostScreenMessage("Igniting " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                                 nextMessageStep++;
                             }
                         }
@@ -599,7 +678,7 @@
                             }*/
 
                             //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
-                            if (eventMessage == "Apogee Kick Stage" && apKickMode == "Cut-Off")
+                            if (engineType == "Apogee Kick Stage" && apKickMode == "Cut-Off")
                             {
                                 //targetApside will be the new Apo
                                 if ((vessel.orbit.ApA / 1000) <= targetApside)
@@ -616,7 +695,7 @@
                             //...vessel.orbit.PeA >= vessel.orbit.ApA...
                             //...vessel.orbit.PeA == vessel.orbit.ApA...
                             //...will of course not work. Dummy me.
-                            else if (eventMessage == "Apogee Kick Stage" && apKickMode == "Circularize")
+                            else if (engineType == "Apogee Kick Stage" && apKickMode == "Circularize")
                             {
                                 //Keep the current eccentricity in mind
                                 tempEcc = vessel.orbit.eccentricity;
@@ -642,7 +721,7 @@
                                     if (eventMessaging)
                                     {
                                         //Showing the engine cutt-off message
-                                        ScreenMessages.PostScreenMessage("Cutting " + eventMessage + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                                     }
                                 }
                             }
@@ -658,7 +737,7 @@
                                     if (eventMessaging)
                                     {
                                         //Showing the engine cutt-off message
-                                        ScreenMessages.PostScreenMessage("Cutting " + eventMessage + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                                     }
                                 }
                             }
@@ -686,7 +765,7 @@
                                 if (eventMessaging)
                                 {
                                     //Showing the engine cutt-off message
-                                    ScreenMessages.PostScreenMessage("Cutting " + eventMessage + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                                    ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                                 }
                             }
                         }
@@ -720,22 +799,22 @@
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextDisabled = "disconnected";
+        private const string StringDisconnected = "disconnected";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextEnabled = "connected";
+        private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingDisabled = "inactive";
+        private const string StringInactive = "inactive";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingEnabled = "active";
+        private const string StringActive = "active";
 
         //The PAW fields in the editor
         //A button to enable or disable the module
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Toggle the mode between post launch delay and a pre Apside delay
@@ -759,7 +838,7 @@
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
         private bool eventMessaging = true;
 
         //The PAW fields in Flight
@@ -793,13 +872,13 @@
                 //Set the visible PAW variable 
                 if (modInUse)
                 {
-                    PAWmodInUse = PAWTextEnabled;
+                    PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
                 }
                 else
                 {
-                    PAWmodInUse = PAWTextDisabled;
+                    PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
                     Fields[nameof(PAWtimeToActivate)].guiActive = false;
                     Fields[nameof(PAWdelayMode)].guiActive = false;
@@ -811,7 +890,7 @@
         private void endMod()
         {
             modInUse = false;
-            PAWmodInUse = PAWTextDisabled;
+            PAWmodInUse = StringDisconnected;
             //Disable all text for inFlight Information
             Fields[nameof(PAWtimeToActivate)].guiActive = false;
             Fields[nameof(PAWdelayMode)].guiActive = false;
@@ -919,23 +998,23 @@
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextDisabled = "disconnected";
+        private const string StringDisconnected = "disconnected";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextEnabled = "connected";
+        private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingDisabled = "inactive";
+        private const string StringInactive = "inactive";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingEnabled = "active";
+        private const string StringActive = "active";
 
 
         //The PAW fields in the editor
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Specify the Height in kilometers in the Editor
@@ -945,7 +1024,7 @@
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
         private bool eventMessaging = false;
 
         //A button to enable or disable if a message for this event will be shown
@@ -983,10 +1062,10 @@
 
                     //Set the visible PAW variable 
                     if (modInUse)
-                        PAWmodInUse = PAWTextEnabled;
+                        PAWmodInUse = StringConnected;
                     else
                     {
-                        PAWmodInUse = PAWTextDisabled;
+                        PAWmodInUse = StringDisconnected;
                         Fields[nameof(PAWflightHeightToSeparate)].guiActive = false;
                     }
                 }
@@ -995,7 +1074,7 @@
         private void endMod()
         {
             modInUse = false;
-            PAWmodInUse = PAWTextDisabled;
+            PAWmodInUse = StringDisconnected;
             //Disable all text for inFlight Information
             Fields[nameof(PAWflightHeightToSeparate)].guiActive = false;
         }
@@ -1056,21 +1135,21 @@
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextDisabled = "disconnected";
+        private const string StringDisconnected = "disconnected";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWTextEnabled = "connected";
+        private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingDisabled = "inactive";
+        private const string StringInactive = "inactive";
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string MessagingEnabled = "active";
+        private const string StringActive = "active";
 
         //A button to enable or disable the function
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = PAWTextDisabled, enabledText = PAWTextEnabled)]
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Specify the Height in kilometers in the Editor
@@ -1088,7 +1167,7 @@
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = MessagingDisabled, enabledText = MessagingEnabled)]
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
         private bool eventMessaging = true;
 
         //A button to enable or disable if a message for this event will be shown
@@ -1112,9 +1191,9 @@
 
                 //Set the visible PAW variable 
                 if (modInUse)
-                    PAWmodInUse = PAWTextEnabled;
+                    PAWmodInUse = StringConnected;
                 else
-                    PAWmodInUse = PAWTextDisabled;
+                    PAWmodInUse = StringDisconnected;
             }
             //Need to call that, in case other mods do stuff here
             base.OnStart(state);
