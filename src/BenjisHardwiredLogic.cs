@@ -251,6 +251,10 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private double tempEcc = 0.0;
 
+        //Catch the slider dragging "bug"
+        [KSPField(isPersistant = true, guiActive = false)]
+        private bool changeHappened = false;
+
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
         private const string PAWIgniterGroupName = "Benji's Delayed Igniter";
@@ -444,7 +448,6 @@
         {
             for (;;)
             {
-                //ScreenMessages.PostScreenMessage("inside Post Launch.", 3.0f, ScreenMessageStyle.UPPER_CENTER);
                 //Calculate how long until the engine ignites
                 PAWtimeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
 
@@ -464,7 +467,6 @@
         {
             for (;;)
             {
-                //ScreenMessages.PostScreenMessage("waiting Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
                     StartCoroutine(coroutinePreApside());
 
@@ -509,41 +511,21 @@
 
         private void isLaunched(EventReport report)
         {
-            /*
-            EventReport.EventReport	(   FlightEvents 	type,
-                                        Part 	eventCreator,
-                                        string 	name = "an unidentified object",
-                                        string 	otherName = "an unidentified object",
-                                        int 	stageNumber = 0,
-                                        string 	customMsg = "" 
-                                        )	*/
-            //ScreenMessages.PostScreenMessage("LAUNCHED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
-
             //Set the launch time
             launchTime = Planetarium.GetUniversalTime();
 
             if (delayMode == "Post Launch")
             {
-                //ScreenMessages.PostScreenMessage("going into Post Launch.", 1.0f, ScreenMessageStyle.UPPER_CENTER);
                 StartCoroutine(coroutinePostLaunch());
             }
             else if (delayMode == "Pre Apside")
             {
-                //ScreenMessages.PostScreenMessage("going into Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                 StartCoroutine(coroutinePreApsideWait());
             }
 
         }
         private void isDead(Part part)
         {
-            /*
-            EventReport.EventReport	(	FlightEvents 	type,
-                                        Part 	eventCreator,
-                                        string 	name = "an unidentified object",
-                                        string 	otherName = "an unidentified object",
-                                        int 	stageNumber = 0,
-                                        string 	customMsg = "" 
-                                        )	*/
             ScreenMessages.PostScreenMessage("DIED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
 
             StopAllCoroutines();
@@ -615,6 +597,10 @@
             }
             else
             {
+                //If the gui is active, then we seem to change this now
+                if (Fields[nameof(delaySeconds)].guiActiveEditor)
+                    changeHappened = true;
+
                 Fields[nameof(delaySeconds)].guiActiveEditor = false;
                 Fields[nameof(delayMinutes)].guiActiveEditor = false;
                 Fields[nameof(totalDelay)].guiActiveEditor = false;
@@ -625,6 +611,14 @@
                 Fields[nameof(apKickMode)].guiActiveEditor = false;
                 Fields[nameof(targetApside)].guiActiveEditor = false;
                 Fields[nameof(eventMessaging)].guiActiveEditor = false;
+
+                //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+                if (changeHappened)
+                {
+                    changeHappened = false;
+                    //refresh the PAW to its new size
+                    MonoUtilities.RefreshPartContextWindow(part);
+                }
             }
         }
 
