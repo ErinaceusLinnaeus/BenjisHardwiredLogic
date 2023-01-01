@@ -253,7 +253,7 @@
 
         //Catch the slider dragging "bug"
         [KSPField(isPersistant = true, guiActive = false)]
-        private bool changeHappened = false;
+        private bool negChangeHappened = false;
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
@@ -426,6 +426,13 @@
 
         private void initEditor()
         {
+            //refresh the PAW to its new size
+            //We need to do this once, in case the mod is active in a saved ship
+            //ShipConstruct ship = null;
+            //updateEditorPAW(ship);
+            updateEditorPAW(null);
+            //updateEditorPAW(new ShipConstruct());
+
             GameEvents.onEditorShipModified.Add(updateEditorPAW);
         }
 
@@ -507,6 +514,33 @@
                 //Showing the actual ignition message
                 ScreenMessages.PostScreenMessage("Igniting " + engineType, 3f, ScreenMessageStyle.UPPER_LEFT);
             }
+
+            //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
+            if (engineType == "Apogee Kick Stage")
+            {
+                if (apKickMode == "Cut-Off")
+                {
+                    //targetApside will be the new Apo
+                    if ((vessel.orbit.ApA / 1000) <= targetApside)
+                    {
+                        cutAtPeri = false;
+                    }
+                    //targetApside will (still) be the Peri
+                    else
+                    {
+                        cutAtPeri = true;
+                    }
+                }
+                //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
+                //...vessel.orbit.PeA >= vessel.orbit.ApA...
+                //...vessel.orbit.PeA == vessel.orbit.ApA...
+                //...will of course not work. Dummy me.
+                else if (apKickMode == "Circularize")
+                {
+                    //Keep the current eccentricity in mind
+                    tempEcc = vessel.orbit.eccentricity;
+                }
+            }
         }
 
         private void isLaunched(EventReport report)
@@ -562,12 +596,24 @@
                 {
                     Fields[nameof(cutAtApogee)].guiActiveEditor = true;
                     if (cutAtApogee)
+                    {
                         Fields[nameof(targetApogee)].guiActiveEditor = true;
+                    }
                     else
+                    {
+                        //If this gui is visible now, then we seem to change this in the next steps
+                        if (Fields[nameof(targetApogee)].guiActiveEditor)
+                            negChangeHappened = true;
+
                         Fields[nameof(targetApogee)].guiActiveEditor = false;
+                    }
                 }
                 else
                 {
+                    //If this gui is visible now, then we seem to change this in the next steps
+                    if (Fields[nameof(targetApogee)].guiActiveEditor)
+                        negChangeHappened = true;
+
                     Fields[nameof(cutAtApogee)].guiActiveEditor = false;
                     Fields[nameof(targetApogee)].guiActiveEditor = false;
                 }
@@ -585,6 +631,10 @@
                     //else hide it
                     else
                     {
+                        //If this gui is visible now, then we seem to change this in the next steps
+                        if (Fields[nameof(targetApside)].guiActiveEditor)
+                            negChangeHappened = true;
+
                         Fields[nameof(targetApside)].guiActiveEditor = false;
                     }
                 }
@@ -597,9 +647,9 @@
             }
             else
             {
-                //If the gui is active, then we seem to change this now
+                //If this gui or any other is visible now, then we seem to change this in the next steps
                 if (Fields[nameof(delaySeconds)].guiActiveEditor)
-                    changeHappened = true;
+                    negChangeHappened = true;
 
                 Fields[nameof(delaySeconds)].guiActiveEditor = false;
                 Fields[nameof(delayMinutes)].guiActiveEditor = false;
@@ -611,14 +661,41 @@
                 Fields[nameof(apKickMode)].guiActiveEditor = false;
                 Fields[nameof(targetApside)].guiActiveEditor = false;
                 Fields[nameof(eventMessaging)].guiActiveEditor = false;
+            }
 
-                //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
-                if (changeHappened)
-                {
-                    changeHappened = false;
-                    //refresh the PAW to its new size
-                    MonoUtilities.RefreshPartContextWindow(part);
-                }
+            //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+            if (negChangeHappened)
+            {
+                negChangeHappened = false;
+                //refresh the PAW to its new size
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
+
+        //This function will write a pre-ignite message on the screen
+        private void printMessage()
+        {
+            //Time to announce the upcoming ignition event
+            if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
+            {
+                //Now to check if we are on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                nextMessageStep++;
+            }
+            else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
+            {
+                //Now to check if we are on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                nextMessageStep++;
+            }
+            else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
+            {
+                //Now to check if we are on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                nextMessageStep++;
             }
         }
 
@@ -635,65 +712,12 @@
                         //Does the user want messages?
                         if (eventMessaging)
                         {
-                            //Time to announce the upcoming ignition event
-                            if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
-                            {
-                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
-                            else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
-                            {
-                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
-                            else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
-                            {
-                                ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
+                            printMessage();
                         }
 
                         //If it's time to ignite...
                         if (PAWtimeToIgnite <= 0)
                         {
-                            /*
-                            //...do it already
-                            part.force_activate();
-                            engineLit = true;
-                            //Hide the timeToIgnition once the engine burns
-                            Fields[nameof(PAWtimeToIgnite)].guiActive = false;
-                            */
-                            /*
-                            //Does the user want messages?
-                            if (eventMessaging)
-                            {
-                                //Showing the actual ignition message
-                                ScreenMessages.PostScreenMessage("Igniting " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
-                            }*/
-
-                            //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
-                            if (engineType == "Apogee Kick Stage" && apKickMode == "Cut-Off")
-                            {
-                                //targetApside will be the new Apo
-                                if ((vessel.orbit.ApA / 1000) <= targetApside)
-                                {
-                                    cutAtPeri = false;
-                                }
-                                //targetApside will (still) be the Peri
-                                else
-                                {
-                                    cutAtPeri = true;
-                                }
-                            }
-                            //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
-                            //...vessel.orbit.PeA >= vessel.orbit.ApA...
-                            //...vessel.orbit.PeA == vessel.orbit.ApA...
-                            //...will of course not work. Dummy me.
-                            else if (engineType == "Apogee Kick Stage" && apKickMode == "Circularize")
-                            {
-                                //Keep the current eccentricity in mind
-                                tempEcc = vessel.orbit.eccentricity;
-                            }
                         }
                     }
                     //if engine is lit
