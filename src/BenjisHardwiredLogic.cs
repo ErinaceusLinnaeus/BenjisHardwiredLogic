@@ -15,17 +15,17 @@
     {
         #region Fields
 
-        //Saving UniversalTime into launchTime when the Vessel get's launched
+        //Saving UniversalTime into launchTime when the Vessel gets launched
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
 
-        //Did the countdown start?
+        //Catch the slider dragging "bug"
         [KSPField(isPersistant = true, guiActive = false)]
-        private bool decoupled = false;
+        private bool negChangeHappened = false;
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWIgniterGroupName = "Benji's Delayed Decoupler";
+        private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
@@ -43,52 +43,53 @@
 
         //The PAW fields in the editor
         //A button to enable or disable the module
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
         //Toggle the mode between post launch delay and a pre Apside delay
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delaymode", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
             UI_ChooseOption(options = new string[2] { "Post Launch", "Pre Apside" })]
         private string delayMode = "Post Launch";
 
         //Specify the delay in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float delaySeconds = 0;
 
         //Specify the delay in minutes in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [min]", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 30f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private float totalDelay = 0;
 
         //Name what the stage that will be decoupled will be called during event messaging
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decouple", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_ChooseOption(options = new string[11] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Apogee Kick Stage" , "Payload", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Spin-/Ullage-Motor" })]
-        private string eventMessage = "1st Stage";
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessagingWanted = true;
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+            UI_ChooseOption(options = new string[12] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Apogee Kick Stage" , "Payload", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Spin-/Ullage-Motor", "Apogee Kick Stage" })]
+        private string stage = "1st Stage";
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWmodInUse;
         //Shows the time until the decoupler decouples in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiUnits = "s", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiUnits = "s", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private double PAWtimeToDecouple = 0;
         //Shows what delay mode this decoupler is in
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWdelayMode;
         //Shows what type of stage will be decouple by this decoupler
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Decouple", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWstage;
+
+        //Shown in the Editor and in Flight
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool eventMessagingWanted = true;
 
         //A small variable to manage the onScreen Messages
         private char nextMessageStep = (char)0;
@@ -97,10 +98,25 @@
 
         #region Overrides
 
+        //This happens once in both EDITOR and FLIGHT
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                initMod();
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
+
+        //Initialize all the fields when in FLIGHT
         private void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             Thread.Sleep(200);
+
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
             {
@@ -113,7 +129,7 @@
                     PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
-                    PAWstage = eventMessage;
+                    PAWstage = stage;
                 }
                 else
                 {
@@ -127,105 +143,196 @@
             }
         }
 
-        private void endMod()
+        //Initialize all the fields when in EDITOR
+        private void initEditor()
         {
-            modInUse = false;
-            PAWmodInUse = StringDisconnected;
-            //Disable all text for inFlight Information
-            Fields[nameof(PAWtimeToDecouple)].guiActive = false;
-            Fields[nameof(PAWdelayMode)].guiActive = false;
-            Fields[nameof(PAWstage)].guiActive = false;
+            //refresh the PAW to its new size
+            //We need to do this once, in case the mod is active in a saved ship
+            updateEditorPAW(null);
+
+            GameEvents.onEditorShipModified.Add(updateEditorPAW);
         }
 
-        //This happens once
-        public override void OnStart(StartState state)
+        //Tweak what fields are shown in the editor
+        private void updateEditorPAW(ShipConstruct ship)
         {
-            initMod();
-            //Need to call that, in case other mods do stuff here
-            base.OnStart(state);
-        }
-
-        //This happens every visual frame
-        public override void OnUpdate()
-        {
-            //Only do crazy stuff when inFlight
-            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+            if (modInUse)
             {
-                if (modInUse)
+                totalDelay = delaySeconds + (delayMinutes * 60f);
+
+                Fields[nameof(delaySeconds)].guiActiveEditor = true;
+                Fields[nameof(delayMinutes)].guiActiveEditor = true;
+                Fields[nameof(totalDelay)].guiActiveEditor = true;
+
+                Fields[nameof(delayMode)].guiActiveEditor = true;
+
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
+            }
+            else
+            {
+                //If this gui or any other is visible now, then we seem to change this in the next steps
+                if (Fields[nameof(delaySeconds)].guiActiveEditor)
+                    negChangeHappened = true;
+
+                Fields[nameof(delaySeconds)].guiActiveEditor = false;
+                Fields[nameof(delayMinutes)].guiActiveEditor = false;
+                Fields[nameof(totalDelay)].guiActiveEditor = false;
+                Fields[nameof(delayMode)].guiActiveEditor = false;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+            }
+
+            //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+            if (negChangeHappened)
+            {
+                negChangeHappened = false;
+                //refresh the PAW to its new size
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
+
+        //Gets called by the GameEvent when the rocket is launched
+        private void isLaunched(EventReport report)
+        {
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            if (delayMode == "Post Launch")
+            {
+                StartCoroutine(coroutinePostLaunch());
+            }
+            else if (delayMode == "Pre Apside")
+            {
+                StartCoroutine(coroutinePreApsideWait());
+            }
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+
+        }
+
+        //Gets called every .1 seconds and counts down to 0 after launch
+        IEnumerator coroutinePostLaunch()
+        {
+            for (; ; )
+            {
+                //Calculate how long until the engine ignites
+                PAWtimeToDecouple = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
+
+                if (PAWtimeToDecouple <= 0)
                 {
-                    if (!decoupled)
+                    decoupleStage();
+                    endMod();
+                    StopCoroutine(coroutinePostLaunch());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+        
+        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
+        IEnumerator coroutinePreApsideWait()
+        {
+            for (; ; )
+            {
+                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                {
+                    StartCoroutine(coroutinePreApside());
+                    StopCoroutine(coroutinePreApsideWait());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(5.0f);
+            }
+        }
+        
+        //Gets called every .1 seconds and counts down to 0 leading up to the next Apside
+        IEnumerator coroutinePreApside()
+        {
+            for (; ; )
+            {
+                //Calculate how long until the engine ignites
+                PAWtimeToDecouple = vessel.orbit.timeToAp - totalDelay;
+
+                if (PAWtimeToDecouple <= 0)
+                {
+                    decoupleStage();
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        
+        //This function will write all the messages on the screen
+        IEnumerator coroutinePrintMessage()
+        {
+            for (; ; )
+            {
+                //Now to check if we are not on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                {
+                    //Time to announce the upcoming ignition event
+                    if (nextMessageStep == 0 && PAWtimeToDecouple <= 10)
                     {
-                        //Check if the Vessel is still attached to the launch clamps
-                        if (launchTime == 0 && vessel.missionTime > 0)
-                        {
-                            //Set the launch time
-                            launchTime = Planetarium.GetUniversalTime();
-                        }
-
-                        if (delayMode == "Post Launch")
-                        {
-                            //Calculate how long until the decoupler decouples
-                            PAWtimeToDecouple = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
-                        }
-                        else if (delayMode == "Pre Apside")
-                        {
-                            if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
-                            {
-                                //Calculate how long until the decoupler decouples
-                                PAWtimeToDecouple = vessel.orbit.timeToAp - totalDelay;
-                            }
-                        }
-
-                        //Does the user want messages?
-                        if (eventMessagingWanted)
-                        {
-                            //Time to announce the upcoming decoupling event
-                            if (nextMessageStep == 0 && PAWtimeToDecouple <= 10)
-                            {
-                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
-                            else if (nextMessageStep == 1 && PAWtimeToDecouple <= 5)
-                            {
-                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
-                            else if (nextMessageStep == 2 && PAWtimeToDecouple <= 2)
-                            {
-                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
-                                nextMessageStep++;
-                            }
-                        }
-
-                        //If it's time to decouple...
-                        if (PAWtimeToDecouple <= 0)
-                        {
-                            //...do it already
-                            part.decouple();
-                            decoupled = true;
-                            //Hide the timeToDecouple
-                            Fields[nameof(PAWtimeToDecouple)].guiActive = false;
-                            //Does the user want messages?
-                            if (eventMessagingWanted)
-                            {
-                                //Showing the actual decoupling message
-                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage, 3f, ScreenMessageStyle.UPPER_CENTER);
-                            }
-                        }
+                        ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
                     }
-                    //if decoupled
-                    else
+                    else if (nextMessageStep == 1 && PAWtimeToDecouple <= 5)
                     {
-                        PAWtimeToDecouple = 0;
+                        ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 2 && PAWtimeToDecouple <= 2)
+                    {
+                        ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 3 && PAWtimeToDecouple <= 0)
+                    {
+                        ScreenMessages.PostScreenMessage("Decoupling " + stage, 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                        yield break;
                     }
                 }
+                yield return new WaitForSeconds(0.2f);
             }
-            //As far as I know I don't need to do this, because I didn't do it before and nothing exploded.
-            //But maybe it's a good idea to start calling it (for other mods?)
-            //Need to call that, in case other mods do stuff here
-            base.OnUpdate();
         }
 
+        //Decouples the stage
+        private void decoupleStage()
+        {
+            part.decouple();
+            //Hide the timeToDecouple once the stage is decoupled
+            Fields[nameof(PAWtimeToDecouple)].guiActive = false;
+
+        }
+
+        //Hide all the fields
+        private void endMod()
+        {
+            if (modInUse)
+            {
+                modInUse = false;
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWtimeToDecouple)].guiActive = false;
+                Fields[nameof(PAWdelayMode)].guiActive = false;
+                Fields[nameof(PAWstage)].guiActive = false;
+
+                //Update the size of the PAW
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
+
+        //Gets called when the part explodes etc.
+        private void isDead(Part part)
+        {
+            //Stopping all the coroutines that might be running
+            StopCoroutine(coroutinePostLaunch());
+            StopCoroutine(coroutinePreApsideWait());
+            StopCoroutine(coroutinePreApside());
+            StopCoroutine(coroutinePrintMessage());
+        }
         #endregion
     }
 
@@ -352,9 +459,7 @@
 
         #endregion
 
-
         #region Overrides
-
 
         //This happens once in both EDITOR and FLIGHT
         public override void OnStart(StartState state)
@@ -586,6 +691,7 @@
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
                 {
                     StartCoroutine(coroutinePreApside());
+                    StopCoroutine(coroutinePreApsideWait());
                     yield break;
                 }
 
@@ -612,11 +718,13 @@
                             if ((vessel.orbit.ApA / 1000) <= targetApside)
                             {
                                 StartCoroutine(coroutinePreApsideCutAtApogee());
+                                StopCoroutine(coroutinePreApside());
                             }
                             //targetApside will (still) be the Peri
                             else
                             {
                                 StartCoroutine(coroutinePreApsideCutAtPerigee());
+                                StopCoroutine(coroutinePreApside());
                             }
                         }
                         //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
@@ -628,6 +736,11 @@
                             //Keep the current eccentricity in mind
                             tempEcc = vessel.orbit.eccentricity;
                             StartCoroutine(coroutinePreApsideCircularize());
+                            StopCoroutine(coroutinePreApside());
+                        }
+                        else
+                        {
+                            StopCoroutine(coroutinePreApside());
                         }
                     }
 
@@ -724,35 +837,31 @@
         {
             for (; ; )
             {
-                //Time to announce the upcoming ignition event
-                if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
+                //Now to check if we are on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
-                    //Now to check if we are on the launch pad
-                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                    //Time to announce the upcoming ignition event
+                    if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
+                    {
                         ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                    nextMessageStep++;
-                }
-                else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
-                {
-                    //Now to check if we are on the launch pad
-                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
-                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
-                    nextMessageStep++;
-                }
-                else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
-                {
-                    //Now to check if we are on the launch pad
-                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
-                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
-                    nextMessageStep++;
-                }
-                else if (nextMessageStep == 3 && PAWtimeToIgnite <= 0)
-                {
-                    //Now to check if we are on the launch pad
-                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
+                    {
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
+                    {
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 3 && PAWtimeToIgnite <= 0)
+                    {
                         ScreenMessages.PostScreenMessage("Igniting " + engineType, 5.0f, ScreenMessageStyle.UPPER_CENTER);
-                    nextMessageStep++;
-                    yield break;
+                        nextMessageStep++;
+                        yield break;
+                    }
                 }
                 yield return new WaitForSeconds(0.2f);
             }
@@ -802,7 +911,6 @@
             StopCoroutine(coroutinePreApsideCutAtPerigee());
             StopCoroutine(coroutinePrintMessage());
         }
-
         #endregion
     }
 
