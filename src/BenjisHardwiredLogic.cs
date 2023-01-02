@@ -326,6 +326,7 @@
             StopCoroutine(coroutinePreApside());
             StopCoroutine(coroutinePrintMessage());
         }
+
         #endregion
     }
 
@@ -904,6 +905,7 @@
             StopCoroutine(coroutinePreApsideCutAtPerigee());
             StopCoroutine(coroutinePrintMessage());
         }
+
         #endregion
     }
 
@@ -1158,22 +1160,22 @@
                 if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
                     //Time to announce the upcoming ignition event
-                    if (nextMessageStep == 0 && PAWtimeToDecouple <= 10)
+                    if (nextMessageStep == 0 && PAWtimeToActivate <= 10)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 1 && PAWtimeToDecouple <= 5)
+                    else if (nextMessageStep == 1 && PAWtimeToActivate <= 5)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 2 && PAWtimeToDecouple <= 2)
+                    else if (nextMessageStep == 2 && PAWtimeToActivate <= 2)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 3 && PAWtimeToDecouple <= 0)
+                    else if (nextMessageStep == 3 && PAWtimeToActivate <= 0)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
@@ -1185,7 +1187,7 @@
         }
 
         //Activate RCS
-        private void decoupleStage()
+        private void activateRCS()
         {
             part.force_activate();
             //Hide the timeToDecouple once the stage is decoupled
@@ -1217,12 +1219,17 @@
             StopCoroutine(coroutinePreApside());
             StopCoroutine(coroutinePrintMessage());
         }
+
         #endregion
     }
 
     public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
     {
         #region Fields
+
+        //Catch the slider dragging "bug"
+        [KSPField(isPersistant = true, guiActive = false)]
+        private bool negChangeHappened = false;
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
@@ -1252,12 +1259,7 @@
         //Specify the Height in kilometers in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
-        private float PAWeditorHeightToSeparate = 60;
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessagingWanted = false;
+        private float heightToSeparate = 60;
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -1272,61 +1274,106 @@
 
         //Shows the Height in kilometers at which the fairing gets separated
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Height to Separate", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private float PAWflightHeightToSeparate = 0;
+        private float PAWheightToSeparate = 0;
+
+        //Shown in the Editor and in Flight
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool eventMessagingWanted = true;
 
         #endregion
 
-
         #region Overrides
+
+        //This happens once in both EDITOR and FLIGHT
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                initMod();
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
 
         private void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             Thread.Sleep(200);
+
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
             {
-                //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
-                if (vessel.situation == Vessel.Situations.PRELAUNCH)
+                //Set the visible PAW variable 
+                if (modInUse)
                 {
-                    //Show me the numbers
-                    PAWflightHeightToSeparate = PAWeditorHeightToSeparate;
-
-                    //Set the visible PAW variable 
-                    if (modInUse)
-                        PAWmodInUse = StringConnected;
-                    else
-                    {
-                        PAWmodInUse = StringDisconnected;
-                        Fields[nameof(PAWflightHeightToSeparate)].guiActive = false;
-                    }
+                    PAWmodInUse = StringConnected;
+                    //Set the text for inFlight Information
+                    PAWheightToSeparate = heightToSeparate;
                 }
+                else
+                {
+                    PAWmodInUse = StringDisconnected;
+                    //Disable all text for inFlight Information
+                    Fields[nameof(PAWheightToSeparate)].guiActive = false;
+                }
+
             }
         }
-        private void endMod()
+
+        //Initialize all the fields when in EDITOR
+        private void initEditor()
         {
-            modInUse = false;
-            PAWmodInUse = StringDisconnected;
-            //Disable all text for inFlight Information
-            Fields[nameof(PAWflightHeightToSeparate)].guiActive = false;
+            //refresh the PAW to its new size
+            //We need to do this once, in case the mod is active in a saved ship
+            updateEditorPAW(null);
+
+            GameEvents.onEditorShipModified.Add(updateEditorPAW);
         }
 
-        //This happens once
-        public override void OnStart(StartState state)
+        //Tweak what fields are shown in the editor
+        private void updateEditorPAW(ShipConstruct ship)
         {
-            initMod();
-            //Need to call that, in case other mods do stuff here
-            base.OnStart(state);
+            if (modInUse)
+            {
+                Fields[nameof(PAWheightToSeparate)].guiActiveEditor = true;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
+            }
+            else
+            {
+                //If this gui or any other is visible now, then we seem to change this in the next steps
+                if (Fields[nameof(PAWheightToSeparate)].guiActiveEditor)
+                    negChangeHappened = true;
+
+                Fields[nameof(PAWheightToSeparate)].guiActiveEditor = false;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+            }
+
+            //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+            if (negChangeHappened)
+            {
+                negChangeHappened = false;
+                //refresh the PAW to its new size
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
         }
 
-        //This happens every visual frame
-        public override void OnUpdate()
+        //Gets called by the GameEvent when the rocket is launched
+        private void isLaunched(EventReport report)
         {
-            //Check if the Vessel is still attached to the launch clamps
-            if (modInUse && vessel.missionTime > 0)
+            StartCoroutine(coroutinePostLaunch());
+        }
+
+        //Gets called every .1 seconds and checks if the desired height is reached
+        IEnumerator coroutinePostLaunch()
+        {
+            for (; ; )
             {
                 //Are we high enough to separate...
-                if (vessel.orbit.altitude >= (PAWflightHeightToSeparate * 1000f))
+                if (vessel.orbit.altitude >= (PAWheightToSeparate * 1000f))
                 {
                     //Does the user want messages?
                     if (eventMessagingWanted)
@@ -1334,146 +1381,34 @@
                         //Showing the jettison message
                         ScreenMessages.PostScreenMessage("Jettisoning " + PAWfairing + "-fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
                     }
-
                     //...do it already
                     part.decouple();
                     endMod();
+                    yield break;
                 }
-
+                yield return new WaitForSeconds(.1f);
             }
         }
 
-        #endregion
-
-    }
-
-    //HAVN'T FOUND OUT WHAT TO USE TO JETTISON STOCK FAIRINGS
-    /*
-    public class BenjisStockFairingSeparator : PartModule
-    {
-        #region Fields
-
-        //Did the launch happen?
-        [KSPField(isPersistant = true, guiActive = false)]
-        private bool vesselLaunched = false;
-
-        //Do we still climb?
-        [KSPField(isPersistant = true, guiActive = false)]
-        private bool checkingHeight = false;
-
-        //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWFairingGroupName = "Benji's Fairing Separator";
-
-        //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
-        private const string StringDisconnected = "disconnected";
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private const string StringConnected = "connected";
-
-        //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
-        private const string StringInactive = "inactive";
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private const string StringActive = "active";
-
-        //A button to enable or disable the function
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
-        private bool modInUse = false;
-
-        //Specify the Height in kilometers in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 140f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
-        private float editorHeightToSeparate = 0;
-
-        //Shows if the fairing is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private string PAWmodInUse;
-
-        //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActiveEditor = false,  guiActive = true, guiName = "Height [km] to Separate", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private float flightHeightToSeparate = 0;
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessagingWanted = true;
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_ChooseOption(options = new string[3] {"Payload", "3rd stage", "2nd stage"})]
-        private string eventMessage = "Payload";
-
-        #endregion
-
-
-        #region Overrides
-
-        //This happens once
-        public override void OnStart(StartState state)
+        private void endMod()
         {
-            //enum of Situations - https://kerbalspaceprogram.com/api/class_vessel.html
-            if (vessel.situation == Vessel.Situations.PRELAUNCH)
-            {
-                //Show me the numbers
-                flightHeightToSeparate = editorHeightToSeparate;
+            modInUse = false;
+            PAWmodInUse = StringDisconnected;
+            //Disable all text for inFlight Information
+            Fields[nameof(PAWheightToSeparate)].guiActive = false;
+            Fields[nameof(eventMessagingWanted)].guiActive = false;
 
-                //Set the visible PAW variable 
-                if (modInUse)
-                    PAWmodInUse = StringConnected;
-                else
-                    PAWmodInUse = StringDisconnected;
-            }
-            //Need to call that, in case other mods do stuff here
-            base.OnStart(state);
+            //Update the size of the PAW
+            MonoUtilities.RefreshPartContextWindow(part);
         }
 
-        //This happens every frame
-        public override void OnUpdate()
+        //Gets called when the part explodes etc.
+        private void isDead(Part part)
         {
-            if (modInUse)
-            {
-                //Check if the Vessel is still attached to the launch clamps
-                if (!vesselLaunched)
-                {
-                    //Once launched the mission time adds up
-                    if (vessel.missionTime > 0)
-                    {
-                        //Make sure not to jump in here again
-                        vesselLaunched = true;
-                        //Start checking the height
-                        checkingHeight = true;
-                    }
-                }
-                //Check if the check for height started ... if the Vessel is launched
-                else if (checkingHeight)
-                {
-                    //Are we high enough to separate...
-                    if (vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
-                    {
-                        //Does the user want messages?
-                        if (eventMessagingWanted)
-                        {
-                        //Showing the Jettison message
-                        ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
-                        }
-
-                        //Stop checking the height
-                        checkingHeight = false;
-                        //...do it already
-                        //part.decouple();  //HAVN'T FOUND OUT WHAT TO USE TO JETTISON STOCK FAIRINGS
-                        
-                    }
-                }
-
-            }
+            //Stopping all the coroutines that might be running
+            StopCoroutine(coroutinePostLaunch());
         }
 
         #endregion
-
     }
-    */
 }
