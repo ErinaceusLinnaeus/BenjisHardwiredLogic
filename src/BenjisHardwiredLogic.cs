@@ -237,14 +237,6 @@
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
 
-        //Is the engine lit?
-        [KSPField(isPersistant = true, guiActive = false)]
-        private bool engineLit = false;
-
-        //Let's check where to Cut-Off...at Peri or Apo
-        [KSPField(isPersistant = true, guiActive = false)]
-        private bool cutAtPeri = false;
-
         //Check the derivative of the eccentricity for circularizing
         [KSPField(isPersistant = true, guiActive = false)]
         private bool eccRising = false;
@@ -405,6 +397,9 @@
                     //else hide it
                     else
                         Fields[nameof(PAWtargetApside)].guiActive = false;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
                 }
                 else
                 {
@@ -416,22 +411,14 @@
                     Fields[nameof(PAWkickMode)].guiActive = false;
                     Fields[nameof(PAWtargetApside)].guiActive = false;
                 }
-
             }
-
-            GameEvents.onLaunch.Add(isLaunched);
-            GameEvents.onPartDie.Add(isDead);
-
         }
 
         private void initEditor()
         {
             //refresh the PAW to its new size
             //We need to do this once, in case the mod is active in a saved ship
-            //ShipConstruct ship = null;
-            //updateEditorPAW(ship);
             updateEditorPAW(null);
-            //updateEditorPAW(new ShipConstruct());
 
             GameEvents.onEditorShipModified.Add(updateEditorPAW);
         }
@@ -448,6 +435,8 @@
             Fields[nameof(PAWengine)].guiActive = false;
             Fields[nameof(PAWkickMode)].guiActive = false;
             Fields[nameof(PAWtargetApside)].guiActive = false;
+
+            StopAllCoroutines();
         }
 
         //Gets called every .1 seconds and counts down to 0
@@ -472,10 +461,13 @@
         //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
-            for (;;)
+            for (; ; )
             {
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                {
                     StartCoroutine(coroutinePreApside());
+                    yield break;
+                }
 
                 yield return new WaitForSecondsRealtime(5.0f);
             }
@@ -486,20 +478,127 @@
         {
             for (;;)
             {
-                //ScreenMessages.PostScreenMessage("inside Pre Apside.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                 //Calculate how long until the engine ignites
                 PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
 
                 if (PAWtimeToIgnite <= 0)
                 {
+                    //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
+                    if (engineType == "Apogee Kick Stage")
+                    {
+                        if (apKickMode == "Cut-Off")
+                        {
+                            //targetApside will be the new Apo
+                            if ((vessel.orbit.ApA / 1000) <= targetApside)
+                            {
+                                StartCoroutine(coroutinePreApsideCutAtApogee());
+                            }
+                            //targetApside will (still) be the Peri
+                            else
+                            {
+                                StartCoroutine(coroutinePreApsideCutAtPerigee());
+                            }
+                        }
+                        //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
+                        //...vessel.orbit.PeA >= vessel.orbit.ApA...
+                        //...vessel.orbit.PeA == vessel.orbit.ApA...
+                        //...will of course not work. Dummy me.
+                        else if (apKickMode == "Circularize")
+                        {
+                            //Keep the current eccentricity in mind
+                            tempEcc = vessel.orbit.eccentricity;
+                            StartCoroutine(coroutinePreApsideCircularize());
+                        }
+                    }
+
                     igniteEngine();
 
-                    StopCoroutine(coroutinePreApside());
+                    yield break;
                 }
 
-                yield return new WaitForSecondsRealtime(.1f);
+                yield return new WaitForSecondsRealtime(0.1f);
             }
         }
+
+        //Cut engine when the targetApside matches with vessel Apogee
+        IEnumerator coroutinePreApsideCutAtApogee()
+        {
+            for (;;)
+            {
+                if ((vessel.orbit.ApA / 1000) >= targetApside)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+                    //Does the user want messages?
+                    if (eventMessaging)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+        }
+
+        //Cut engine when the targetApside matches with vessel Perigee
+        IEnumerator coroutinePreApsideCutAtPerigee()
+        {
+            for (;;)
+            {
+                if ((vessel.orbit.PeA / 1000) >= targetApside)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+                    //Does the user want messages?
+                    if (eventMessaging)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+        }
+
+
+        //Cut engine when the orbit is circulare
+        IEnumerator coroutinePreApsideCircularize()
+        {
+            for (;;)
+            {
+                //Once the Kick Stage is burning the eccentricity will fall,
+                //but once the orbit was circular and the burn continues the eccentricity will rise again
+                if (vessel.orbit.eccentricity > tempEcc)
+                {
+                    eccRising = true;
+                }
+                else
+                {
+                    tempEcc = vessel.orbit.eccentricity;
+                }
+
+                if (eccRising)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+
+                    //Does the user want messages?
+                    if (eventMessaging)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+        }
+
 
         private void igniteEngine()
         {
@@ -513,33 +612,6 @@
             {
                 //Showing the actual ignition message
                 ScreenMessages.PostScreenMessage("Igniting " + engineType, 3f, ScreenMessageStyle.UPPER_LEFT);
-            }
-
-            //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
-            if (engineType == "Apogee Kick Stage")
-            {
-                if (apKickMode == "Cut-Off")
-                {
-                    //targetApside will be the new Apo
-                    if ((vessel.orbit.ApA / 1000) <= targetApside)
-                    {
-                        cutAtPeri = false;
-                    }
-                    //targetApside will (still) be the Peri
-                    else
-                    {
-                        cutAtPeri = true;
-                    }
-                }
-                //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
-                //...vessel.orbit.PeA >= vessel.orbit.ApA...
-                //...vessel.orbit.PeA == vessel.orbit.ApA...
-                //...will of course not work. Dummy me.
-                else if (apKickMode == "Circularize")
-                {
-                    //Keep the current eccentricity in mind
-                    tempEcc = vessel.orbit.eccentricity;
-                }
             }
         }
 
@@ -556,6 +628,8 @@
             {
                 StartCoroutine(coroutinePreApsideWait());
             }
+            if (eventMessaging)
+                StartCoroutine(coroutinePrintMessage());
 
         }
         private void isDead(Part part)
@@ -673,129 +747,36 @@
         }
 
         //This function will write a pre-ignite message on the screen
-        private void printMessage()
+        IEnumerator coroutinePrintMessage()
         {
-            //Time to announce the upcoming ignition event
-            if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
+            for (; ; )
             {
-                //Now to check if we are on the launch pad
-                if (vessel.situation != Vessel.Situations.PRELAUNCH)
-                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                nextMessageStep++;
-            }
-            else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
-            {
-                //Now to check if we are on the launch pad
-                if (vessel.situation != Vessel.Situations.PRELAUNCH)
-                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
-                nextMessageStep++;
-            }
-            else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
-            {
-                //Now to check if we are on the launch pad
-                if (vessel.situation != Vessel.Situations.PRELAUNCH)
-                    ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
-                nextMessageStep++;
-            }
-        }
-
-        //This happens every visual frame
-        public override void OnUpdate()
-        {
-            //Only do crazy stuff when inFlight
-            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
-            {
-                if (modInUse)
+                //Time to announce the upcoming ignition event
+                if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
                 {
-                    if (!engineLit)
-                    {
-                        //Does the user want messages?
-                        if (eventMessaging)
-                        {
-                            printMessage();
-                        }
-
-                        //If it's time to ignite...
-                        if (PAWtimeToIgnite <= 0)
-                        {
-                        }
-                    }
-                    //if engine is lit
-                    else
-                    {
-                        PAWtimeToIgnite = 0;
-
-                        if (apKickMode == "Cut-Off")
-                        {
-                            //Cutting when the Peri is raised until we reach targetApside
-                            if (cutAtPeri)
-                            {
-                                if ((vessel.orbit.PeA / 1000) >= targetApside)
-                                {
-                                    //...cut the engine
-                                    FlightInputHandler.state.mainThrottle = 0;
-                                    endMod();
-                                    //Does the user want messages?
-                                    if (eventMessaging)
-                                    {
-                                        //Showing the engine cutt-off message
-                                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                                    }
-                                }
-                            }
-                            //Cutting when the new Apo is raised until we reach targetApside
-                            else
-                            {
-                                if ((vessel.orbit.ApA / 1000) >= targetApside)
-                                {
-                                    //...cut the engine
-                                    FlightInputHandler.state.mainThrottle = 0;
-                                    endMod();
-                                    //Does the user want messages?
-                                    if (eventMessaging)
-                                    {
-                                        //Showing the engine cutt-off message
-                                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                                    }
-                                }
-                            }
-                        }
-                        else if (apKickMode == "Circularize")
-                        {
-                            //Once the Kick Stage is burning the eccentricity will fall,
-                            //but once the orbit was circular and the burn continues the eccentricity will rise again
-                            if (vessel.orbit.eccentricity > tempEcc)
-                            {
-                                eccRising = true;
-                            }
-                            else
-                            {
-                                tempEcc = vessel.orbit.eccentricity;
-                            }
-
-                            if (eccRising)
-                            {
-                                //...cut the engine
-                                FlightInputHandler.state.mainThrottle = 0;
-                                endMod();
-
-                                //Does the user want messages?
-                                if (eventMessaging)
-                                {
-                                    //Showing the engine cutt-off message
-                                    ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                                }
-                            }
-                        }
-                    }
+                    //Now to check if we are on the launch pad
+                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                    nextMessageStep++;
                 }
+                else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
+                {
+                    //Now to check if we are on the launch pad
+                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
+                    nextMessageStep++;
+                }
+                else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
+                {
+                    //Now to check if we are on the launch pad
+                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
+                    nextMessageStep++;
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(1.0f);
             }
-            //As far as I know I don't need to do this, because I didn't do it before and nothing exploded.
-            //But maybe it's a good idea to start calling it (for other mods?)
-            //Need to call that, in case other mods do stuff here
-            base.OnUpdate();
         }
-
         #endregion
     }
 
