@@ -74,7 +74,7 @@
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessaging = true;
+        private bool eventMessagingWanted = true;
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
@@ -177,7 +177,7 @@
                         }
 
                         //Does the user want messages?
-                        if (eventMessaging)
+                        if (eventMessagingWanted)
                         {
                             //Time to announce the upcoming decoupling event
                             if (nextMessageStep == 0 && PAWtimeToDecouple <= 10)
@@ -206,10 +206,10 @@
                             //Hide the timeToDecouple
                             Fields[nameof(PAWtimeToDecouple)].guiActive = false;
                             //Does the user want messages?
-                            if (eventMessaging)
+                            if (eventMessagingWanted)
                             {
                                 //Showing the actual decoupling message
-                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage, 3f, ScreenMessageStyle.UPPER_LEFT);
+                                ScreenMessages.PostScreenMessage("Decoupling " + eventMessage, 3f, ScreenMessageStyle.UPPER_CENTER);
                             }
                         }
                     }
@@ -345,7 +345,7 @@
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessaging = true;
+        private bool eventMessagingWanted = true;
 
         //A small variable to manage the onScreen Messages
         private char nextMessageStep = (char)0;
@@ -355,6 +355,21 @@
 
         #region Overrides
 
+
+        //This happens once in both EDITOR and FLIGHT
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                initMod();
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
+
+        //Initialize all the fields when in FLIGHT
         private void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
@@ -372,14 +387,21 @@
                     PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
-                    if (delayMode == "Post Launch" && cutAtApogee)
+                    if (delayMode == "Post Launch")
                     {
-                        PAWcutAtApogee = StringActive;
-                        PAWtargetApogee = string.Format("{0:N0}", targetApogee);
+                        if (cutAtApogee)
+                        {
+                            PAWcutAtApogee = StringActive;
+                            PAWtargetApogee = string.Format("{0:N0}", targetApogee);
+                        }
+                        else
+                        {
+                            Fields[nameof(PAWcutAtApogee)].guiActive = false;
+                            Fields[nameof(PAWtargetApogee)].guiActive = false;
+                        }
                     }
                     else if (delayMode == "Pre Apside")
                     {
-                        cutAtApogee = false;
                         Fields[nameof(PAWcutAtApogee)].guiActive = false;
                         Fields[nameof(PAWtargetApogee)].guiActive = false;
                     }
@@ -414,6 +436,7 @@
             }
         }
 
+        //Initialize all the fields when in EDITOR
         private void initEditor()
         {
             //refresh the PAW to its new size
@@ -421,236 +444,6 @@
             updateEditorPAW(null);
 
             GameEvents.onEditorShipModified.Add(updateEditorPAW);
-        }
-
-        private void endMod()
-        {
-            modInUse = false;
-            PAWmodInUse = StringDisconnected;
-            //Disable all text for inFlight Information
-            Fields[nameof(PAWtimeToIgnite)].guiActive = false;
-            Fields[nameof(PAWdelayMode)].guiActive = false;
-            Fields[nameof(PAWcutAtApogee)].guiActive = false;
-            Fields[nameof(PAWtargetApogee)].guiActive = false;
-            Fields[nameof(PAWengine)].guiActive = false;
-            Fields[nameof(PAWkickMode)].guiActive = false;
-            Fields[nameof(PAWtargetApside)].guiActive = false;
-
-            StopAllCoroutines();
-        }
-
-        //Gets called every .1 seconds and counts down to 0
-        IEnumerator coroutinePostLaunch()
-        {
-            for (;;)
-            {
-                //Calculate how long until the engine ignites
-                PAWtimeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
-
-                if (PAWtimeToIgnite <= 0)
-                {
-                    igniteEngine();
-
-                    StopCoroutine(coroutinePostLaunch());
-                }
-
-                yield return new WaitForSecondsRealtime(.1f);
-            }
-        }
-
-        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
-        IEnumerator coroutinePreApsideWait()
-        {
-            for (; ; )
-            {
-                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
-                {
-                    StartCoroutine(coroutinePreApside());
-                    yield break;
-                }
-
-                yield return new WaitForSecondsRealtime(5.0f);
-            }
-        }
-
-        //Gets called every .1 seconds and counts down to 0
-        IEnumerator coroutinePreApside()
-        {
-            for (;;)
-            {
-                //Calculate how long until the engine ignites
-                PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
-
-                if (PAWtimeToIgnite <= 0)
-                {
-                    //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
-                    if (engineType == "Apogee Kick Stage")
-                    {
-                        if (apKickMode == "Cut-Off")
-                        {
-                            //targetApside will be the new Apo
-                            if ((vessel.orbit.ApA / 1000) <= targetApside)
-                            {
-                                StartCoroutine(coroutinePreApsideCutAtApogee());
-                            }
-                            //targetApside will (still) be the Peri
-                            else
-                            {
-                                StartCoroutine(coroutinePreApsideCutAtPerigee());
-                            }
-                        }
-                        //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
-                        //...vessel.orbit.PeA >= vessel.orbit.ApA...
-                        //...vessel.orbit.PeA == vessel.orbit.ApA...
-                        //...will of course not work. Dummy me.
-                        else if (apKickMode == "Circularize")
-                        {
-                            //Keep the current eccentricity in mind
-                            tempEcc = vessel.orbit.eccentricity;
-                            StartCoroutine(coroutinePreApsideCircularize());
-                        }
-                    }
-
-                    igniteEngine();
-
-                    yield break;
-                }
-
-                yield return new WaitForSecondsRealtime(0.1f);
-            }
-        }
-
-        //Cut engine when the targetApside matches with vessel Apogee
-        IEnumerator coroutinePreApsideCutAtApogee()
-        {
-            for (;;)
-            {
-                if ((vessel.orbit.ApA / 1000) >= targetApside)
-                {
-                    //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
-                    endMod();
-                    //Does the user want messages?
-                    if (eventMessaging)
-                    {
-                        //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                    }
-                    yield break;
-                }
-                yield return new WaitForSecondsRealtime(0.1f);
-            }
-        }
-
-        //Cut engine when the targetApside matches with vessel Perigee
-        IEnumerator coroutinePreApsideCutAtPerigee()
-        {
-            for (;;)
-            {
-                if ((vessel.orbit.PeA / 1000) >= targetApside)
-                {
-                    //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
-                    endMod();
-                    //Does the user want messages?
-                    if (eventMessaging)
-                    {
-                        //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                    }
-                    yield break;
-                }
-                yield return new WaitForSecondsRealtime(0.1f);
-            }
-        }
-
-
-        //Cut engine when the orbit is circulare
-        IEnumerator coroutinePreApsideCircularize()
-        {
-            for (;;)
-            {
-                //Once the Kick Stage is burning the eccentricity will fall,
-                //but once the orbit was circular and the burn continues the eccentricity will rise again
-                if (vessel.orbit.eccentricity > tempEcc)
-                {
-                    eccRising = true;
-                }
-                else
-                {
-                    tempEcc = vessel.orbit.eccentricity;
-                }
-
-                if (eccRising)
-                {
-                    //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
-                    endMod();
-
-                    //Does the user want messages?
-                    if (eventMessaging)
-                    {
-                        //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                    }
-                    yield break;
-                }
-                yield return new WaitForSecondsRealtime(0.1f);
-            }
-        }
-
-
-        private void igniteEngine()
-        {
-            //Starts the engine
-            part.force_activate();
-            //Hide the timeToIgnition once the engine burns
-            Fields[nameof(PAWtimeToIgnite)].guiActive = false;
-
-            //Does the user want messages?
-            if (eventMessaging)
-            {
-                //Showing the actual ignition message
-                ScreenMessages.PostScreenMessage("Igniting " + engineType, 3f, ScreenMessageStyle.UPPER_LEFT);
-            }
-        }
-
-        private void isLaunched(EventReport report)
-        {
-            //Set the launch time
-            launchTime = Planetarium.GetUniversalTime();
-
-            if (delayMode == "Post Launch")
-            {
-                StartCoroutine(coroutinePostLaunch());
-            }
-            else if (delayMode == "Pre Apside")
-            {
-                StartCoroutine(coroutinePreApsideWait());
-            }
-            if (eventMessaging)
-                StartCoroutine(coroutinePrintMessage());
-
-        }
-        private void isDead(Part part)
-        {
-            ScreenMessages.PostScreenMessage("DIED.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
-
-            StopAllCoroutines();
-
-        }
-
-        //This happens once
-        public override void OnStart(StartState state)
-        {
-            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
-                initMod();
-
-            if (HighLogic.LoadedScene == GameScenes.EDITOR)
-                initEditor();
-
-            //Need to call that, in case other mods do stuff here
-            base.OnStart(state);
         }
 
         //Tweak what fields are shown in the editor
@@ -717,7 +510,7 @@
                     Fields[nameof(apKickMode)].guiActiveEditor = false;
                     Fields[nameof(targetApside)].guiActiveEditor = false;
                 }
-                Fields[nameof(eventMessaging)].guiActiveEditor = true;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
             {
@@ -734,7 +527,7 @@
                 Fields[nameof(engineType)].guiActiveEditor = false;
                 Fields[nameof(apKickMode)].guiActiveEditor = false;
                 Fields[nameof(targetApside)].guiActiveEditor = false;
-                Fields[nameof(eventMessaging)].guiActiveEditor = false;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
             //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
@@ -746,7 +539,187 @@
             }
         }
 
-        //This function will write a pre-ignite message on the screen
+        //Gets called by the GameEvent when the rocket is launched
+        private void isLaunched(EventReport report)
+        {
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            if (delayMode == "Post Launch")
+            {
+                StartCoroutine(coroutinePostLaunch());
+            }
+            else if (delayMode == "Pre Apside")
+            {
+                StartCoroutine(coroutinePreApsideWait());
+            }
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+
+        }
+
+        //Gets called every .1 seconds and counts down to 0 after launch
+        IEnumerator coroutinePostLaunch()
+        {
+            for (;;)
+            {
+                //Calculate how long until the engine ignites
+                PAWtimeToIgnite = (launchTime + totalDelay) - Planetarium.GetUniversalTime();
+
+                if (PAWtimeToIgnite <= 0)
+                {
+                    igniteEngine();
+                    endMod();
+                    StopCoroutine(coroutinePostLaunch());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
+        IEnumerator coroutinePreApsideWait()
+        {
+            for (;;)
+            {
+                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                {
+                    StartCoroutine(coroutinePreApside());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(5.0f);
+            }
+        }
+
+        //Gets called every .1 seconds and counts down to 0 leading up to the next Apside
+        IEnumerator coroutinePreApside()
+        {
+            for (;;)
+            {
+                //Calculate how long until the engine ignites
+                PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
+
+                if (PAWtimeToIgnite <= 0)
+                {
+                    //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
+                    if (engineType == "Apogee Kick Stage")
+                    {
+                        if (apKickMode == "Cut-Off")
+                        {
+                            //targetApside will be the new Apo
+                            if ((vessel.orbit.ApA / 1000) <= targetApside)
+                            {
+                                StartCoroutine(coroutinePreApsideCutAtApogee());
+                            }
+                            //targetApside will (still) be the Peri
+                            else
+                            {
+                                StartCoroutine(coroutinePreApsideCutAtPerigee());
+                            }
+                        }
+                        //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
+                        //...vessel.orbit.PeA >= vessel.orbit.ApA...
+                        //...vessel.orbit.PeA == vessel.orbit.ApA...
+                        //...will of course not work. Dummy me.
+                        else if (apKickMode == "Circularize")
+                        {
+                            //Keep the current eccentricity in mind
+                            tempEcc = vessel.orbit.eccentricity;
+                            StartCoroutine(coroutinePreApsideCircularize());
+                        }
+                    }
+
+                    igniteEngine();
+
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        //Cut the engine when the targetApside matches with vessel Apogee
+        IEnumerator coroutinePreApsideCutAtApogee()
+        {
+            for (;;)
+            {
+                if ((vessel.orbit.ApA / 1000) >= targetApside)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+                    //Does the user want messages?
+                    if (eventMessagingWanted)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        //Cut the engine when the targetApside matches with vessel Perigee
+        IEnumerator coroutinePreApsideCutAtPerigee()
+        {
+            for (;;)
+            {
+                if ((vessel.orbit.PeA / 1000) >= targetApside)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+                    //Does the user want messages?
+                    if (eventMessagingWanted)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+
+        //Cut the engine when the orbit is as circular as possible
+        IEnumerator coroutinePreApsideCircularize()
+        {
+            for (;;)
+            {
+                //Once the Kick Stage is burning the eccentricity will fall,
+                //but once the orbit was circular and the burn continues the eccentricity will rise again
+                if (vessel.orbit.eccentricity > tempEcc)
+                {
+                    eccRising = true;
+                }
+                else
+                {
+                    tempEcc = vessel.orbit.eccentricity;
+                }
+
+                if (eccRising)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+
+                    //Does the user want messages?
+                    if (eventMessagingWanted)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        //This function will write all the messages on the screen
+
         IEnumerator coroutinePrintMessage()
         {
             for (; ; )
@@ -772,11 +745,64 @@
                     if (vessel.situation != Vessel.Situations.PRELAUNCH)
                         ScreenMessages.PostScreenMessage("Igniting " + engineType + " in  2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                     nextMessageStep++;
+                }
+                else if (nextMessageStep == 3 && PAWtimeToIgnite <= 0)
+                {
+                    //Now to check if we are on the launch pad
+                    if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                        ScreenMessages.PostScreenMessage("Igniting " + engineType, 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    nextMessageStep++;
                     yield break;
                 }
-                yield return new WaitForSecondsRealtime(1.0f);
+                yield return new WaitForSeconds(0.2f);
             }
         }
+
+        //Ignite the engine
+        private void igniteEngine()
+        {
+            //Starts the engine
+            part.force_activate();
+            //Hide the timeToIgnition once the engine burns
+            Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+
+        }
+
+        //Hide all the fields
+        private void endMod()
+        {
+            if (modInUse)
+            {
+                modInUse = false;
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+                Fields[nameof(PAWdelayMode)].guiActive = false;
+                Fields[nameof(PAWcutAtApogee)].guiActive = false;
+                Fields[nameof(PAWtargetApogee)].guiActive = false;
+                Fields[nameof(PAWengine)].guiActive = false;
+                Fields[nameof(PAWkickMode)].guiActive = false;
+                Fields[nameof(PAWtargetApside)].guiActive = false;
+                Fields[nameof(eventMessagingWanted)].guiActive = false;
+
+                //Update the size of the PAW
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
+
+        //Gets called when the part explodes etc.
+        private void isDead(Part part)
+        {
+            //Stopping all the coroutines that might be running
+            StopCoroutine(coroutinePostLaunch());
+            StopCoroutine(coroutinePreApsideWait());
+            StopCoroutine(coroutinePreApside());
+            StopCoroutine(coroutinePreApsideCircularize());
+            StopCoroutine(coroutinePreApsideCutAtApogee());
+            StopCoroutine(coroutinePreApsideCutAtPerigee());
+            StopCoroutine(coroutinePrintMessage());
+        }
+
         #endregion
     }
 
@@ -838,7 +864,7 @@
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessaging = true;
+        private bool eventMessagingWanted = true;
 
         //The PAW fields in Flight
         //Shows if RCS is active
@@ -935,7 +961,7 @@
                         }
 
                         //Does the user want messages?
-                        if (eventMessaging)
+                        if (eventMessagingWanted)
                         {
                             //Time to announce the upcoming activation event
                             if (nextMessageStep == 0 && PAWtimeToActivate <= 10)
@@ -964,10 +990,10 @@
                             //Hide the timeToActivation
                             Fields[nameof(PAWtimeToActivate)].guiActive = false;
                             //Does the user want messages?
-                            if (eventMessaging)
+                            if (eventMessagingWanted)
                             {
                                 //Showing the actual activation message
-                                ScreenMessages.PostScreenMessage("Activating RCS.", 3f, ScreenMessageStyle.UPPER_LEFT);
+                                ScreenMessages.PostScreenMessage("Activating RCS.", 3f, ScreenMessageStyle.UPPER_CENTER);
                             }
                         }
                     }
@@ -1024,7 +1050,7 @@
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessaging = false;
+        private bool eventMessagingWanted = false;
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -1096,7 +1122,7 @@
                 if (vessel.orbit.altitude >= (PAWflightHeightToSeparate * 1000f))
                 {
                     //Does the user want messages?
-                    if (eventMessaging)
+                    if (eventMessagingWanted)
                     {
                         //Showing the jettison message
                         ScreenMessages.PostScreenMessage("Jettisoning " + PAWfairing + "-fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
@@ -1167,7 +1193,7 @@
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessaging = true;
+        private bool eventMessagingWanted = true;
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -1222,7 +1248,7 @@
                     if (vessel.orbit.altitude >= (flightHeightToSeparate * 1000f))
                     {
                         //Does the user want messages?
-                        if (eventMessaging)
+                        if (eventMessagingWanted)
                         {
                         //Showing the Jettison message
                         ScreenMessages.PostScreenMessage("Jettison " + eventMessage + " fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
