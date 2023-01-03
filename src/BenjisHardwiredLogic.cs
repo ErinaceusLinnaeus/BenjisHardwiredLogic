@@ -1,8 +1,13 @@
 ﻿namespace BenjisHardwiredLogic
 {
+    using KSP.UI.Screens;
+    using System;
     using System.Collections;
+    using System.Reflection;
+    using System.Security.Claims;
     using System.Threading;
     using UnityEngine;
+    using VehiclePhysics;
 
     public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
     {
@@ -123,6 +128,9 @@
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
                     PAWstage = stage;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
                 }
                 else
                 {
@@ -153,12 +161,11 @@
             {
                 totalDelay = delaySeconds + (delayMinutes * 60f);
 
+                Fields[nameof(delayMode)].guiActiveEditor = true;
                 Fields[nameof(delaySeconds)].guiActiveEditor = true;
                 Fields[nameof(delayMinutes)].guiActiveEditor = true;
                 Fields[nameof(totalDelay)].guiActiveEditor = true;
-
-                Fields[nameof(delayMode)].guiActiveEditor = true;
-
+                Fields[nameof(stage)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
@@ -167,10 +174,11 @@
                 if (Fields[nameof(delaySeconds)].guiActiveEditor)
                     negChangeHappened = true;
 
+                Fields[nameof(delayMode)].guiActiveEditor = false;
                 Fields[nameof(delaySeconds)].guiActiveEditor = false;
                 Fields[nameof(delayMinutes)].guiActiveEditor = false;
                 Fields[nameof(totalDelay)].guiActiveEditor = false;
-                Fields[nameof(delayMode)].guiActiveEditor = false;
+                Fields[nameof(stage)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
@@ -552,11 +560,11 @@
             {
                 totalDelay = delaySeconds + (delayMinutes * 60f);
 
+                Fields[nameof(delayMode)].guiActiveEditor = true;
                 Fields[nameof(delaySeconds)].guiActiveEditor = true;
                 Fields[nameof(delayMinutes)].guiActiveEditor = true;
                 Fields[nameof(totalDelay)].guiActiveEditor = true;
 
-                Fields[nameof(delayMode)].guiActiveEditor = true;
 
                 if (delayMode == "Post Launch")
                 {
@@ -617,10 +625,10 @@
                 if (Fields[nameof(delaySeconds)].guiActiveEditor)
                     negChangeHappened = true;
 
+                Fields[nameof(delayMode)].guiActiveEditor = false;
                 Fields[nameof(delaySeconds)].guiActiveEditor = false;
                 Fields[nameof(delayMinutes)].guiActiveEditor = false;
                 Fields[nameof(totalDelay)].guiActiveEditor = false;
-                Fields[nameof(delayMode)].guiActiveEditor = false;
                 Fields[nameof(cutAtApogee)].guiActiveEditor = false;
                 Fields[nameof(targetApogee)].guiActiveEditor = false;
                 Fields[nameof(engineType)].guiActiveEditor = false;
@@ -667,9 +675,35 @@
 
                 if (PAWtimeToIgnite <= 0)
                 {
+                    if (cutAtApogee)
+                    {
+                        StartCoroutine(coroutinePostLaunchCut());
+                    }
+                    else
+                    {
+                        endMod();
+                    }
+
                     igniteEngine();
-                    endMod();
                     StopCoroutine(coroutinePostLaunch());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //Gets called every .1 seconds and counts down to 0 after launch
+        IEnumerator coroutinePostLaunchCut()
+        {
+            for (; ; )
+            {
+                if (vessel.orbit.ApA / 1000 >= targetApogee)
+                {
+                    //...cut the engine
+                    FlightInputHandler.state.mainThrottle = 0;
+                    endMod();
+                    StopCoroutine(coroutinePostLaunchCut());
                     yield break;
                 }
 
@@ -732,8 +766,9 @@
                             StartCoroutine(coroutinePreApsideCircularize());
                             StopCoroutine(coroutinePreApside());
                         }
-                        else
+                        else if (apKickMode == "Burn-Out")
                         {
+                            StartCoroutine(coroutinePreApsideBurnOut());
                             StopCoroutine(coroutinePreApside());
                         }
                     }
@@ -818,15 +853,36 @@
                     if (eventMessagingWanted)
                     {
                         //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + ".", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + " with an eccentricity of " + vessel.orbit.eccentricity + ".", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     }
                     yield break;
                 }
                 yield return new WaitForSeconds(0.1f);
             }
         }
-        //This function will write all the messages on the screen
 
+        //Ends the mod when the engine is burned out
+        IEnumerator coroutinePreApsideBurnOut()
+        {
+            for (; ; )
+            {
+                //Looking up if the engine flamed out
+                if (part.FindModuleImplementing<ModuleEngines>().getFlameoutState)
+                {
+                    endMod();
+                    //Does the user want messages?
+                    if (eventMessagingWanted)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage(engineType + " burned out.", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    }
+                    yield break;
+                }
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+
+        //This function will write all the messages on the screen
         IEnumerator coroutinePrintMessage()
         {
             for (; ; )
@@ -864,6 +920,9 @@
         //Ignite the engine
         private void igniteEngine()
         {
+            //Make sure throttle is at 100%
+            //Will maybe be at 0% after timewarping and definitely when the PostLaunch-cutAtApogee feature is used
+            FlightInputHandler.state.mainThrottle = 100;
             //Starts the engine
             part.force_activate();
             //Hide the timeToIgnition once the engine burns
@@ -898,11 +957,13 @@
         {
             //Stopping all the coroutines that might be running
             StopCoroutine(coroutinePostLaunch());
+            StopCoroutine(coroutinePostLaunchCut());
             StopCoroutine(coroutinePreApsideWait());
             StopCoroutine(coroutinePreApside());
             StopCoroutine(coroutinePreApsideCircularize());
             StopCoroutine(coroutinePreApsideCutAtApogee());
             StopCoroutine(coroutinePreApsideCutAtPerigee());
+            StopCoroutine(coroutinePreApsideBurnOut());
             StopCoroutine(coroutinePrintMessage());
         }
 
@@ -1019,6 +1080,9 @@
                     PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWdelayMode = delayMode;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
                 }
                 else
                 {
@@ -1313,6 +1377,9 @@
                     PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
                     PAWheightToSeparate = heightToSeparate;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
                 }
                 else
                 {
