@@ -9,6 +9,10 @@
     {
         #region Fields
 
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
+
         //Saving UniversalTime into launchTime when the Vessel gets launched
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
@@ -105,11 +109,28 @@
             base.OnStart(state);
         }
 
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutinePostLaunch());
+            else if (activeCoroutine == 3)
+                StartCoroutine(coroutinePreApsideWait());
+            else if (activeCoroutine == 4)
+                StartCoroutine(coroutinePreApside());
+
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+        }
+
         //Initialize all the fields when in FLIGHT
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
+
+            if (activeCoroutine != 0)
+                isLoading();
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -209,6 +230,7 @@
         //Gets called every .1 seconds and counts down to 0 after launch
         IEnumerator coroutinePostLaunch()
         {
+            activeCoroutine = 1;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -229,6 +251,7 @@
         //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
+            activeCoroutine = 2;
             for (; ; )
             {
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
@@ -245,6 +268,7 @@
         //Gets called every .1 seconds and counts down to 0 leading up to the next Apside
         IEnumerator coroutinePreApside()
         {
+            activeCoroutine = 3;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -318,6 +342,8 @@
 
                 //Update the size of the PAW
                 MonoUtilities.RefreshPartContextWindow(part);
+
+                activeCoroutine = 0;
             }
         }
 
@@ -337,6 +363,10 @@
     public class BenjisDelayedIgniter : PartModule//ModuleEngines*
     {
         #region Fields
+
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
 
         //Saving UniversalTime into launchTime when the Vessel get's launched
         [KSPField(isPersistant = true, guiActive = false)]
@@ -472,11 +502,38 @@
             base.OnStart(state);
         }
 
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutinePostLaunch());
+            else if (activeCoroutine == 2)
+                StartCoroutine(coroutinePostLaunchCut());
+            else if (activeCoroutine == 3)
+                StartCoroutine(coroutinePreApsideWait());
+            else if (activeCoroutine == 4)
+                StartCoroutine(coroutinePreApside());
+            else if (activeCoroutine == 5)
+                StartCoroutine(coroutinePreApsideCutAtApogee());
+            else if (activeCoroutine == 6)
+                StartCoroutine(coroutinePreApsideCutAtPerigee());
+            else if (activeCoroutine == 7)
+                StartCoroutine(coroutinePreApsideCircularize());
+            else if (activeCoroutine == 8)
+                StartCoroutine(coroutinePreApsideBurnOut());
+
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+        }
+
         //Initialize all the fields when in FLIGHT
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
+
+            if (activeCoroutine != 0)
+                isLoading();
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -664,6 +721,7 @@
         //Gets called every .1 seconds and counts down to 0 after launch
         IEnumerator coroutinePostLaunch()
         {
+            activeCoroutine = 1;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -692,6 +750,7 @@
         //Gets called every .1 seconds and counts down to 0 after launch
         IEnumerator coroutinePostLaunchCut()
         {
+            activeCoroutine = 2;
             for (; ; )
             {
                 if ((vessel.orbit.ApA / 1000) >= targetApogee)
@@ -717,6 +776,7 @@
         //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
+            activeCoroutine = 3;
             for (; ; )
             {
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
@@ -733,6 +793,7 @@
         //Gets called every .1 seconds and counts down to 0 leading up to the next Apside
         IEnumerator coroutinePreApside()
         {
+            activeCoroutine = 4;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -786,6 +847,7 @@
         //Cut the engine when the targetApside matches with vessel Apogee
         IEnumerator coroutinePreApsideCutAtApogee()
         {
+            activeCoroutine = 5;
             for (; ; )
             {
                 if ((vessel.orbit.ApA / 1000) >= targetApside)
@@ -809,6 +871,7 @@
         //Cut the engine when the targetApside matches with vessel Perigee
         IEnumerator coroutinePreApsideCutAtPerigee()
         {
+            activeCoroutine = 6;
             for (; ; )
             {
                 if ((vessel.orbit.PeA / 1000) >= targetApside)
@@ -833,6 +896,7 @@
         //Cut the engine when the orbit is as circular as possible
         IEnumerator coroutinePreApsideCircularize()
         {
+            activeCoroutine = 7;
             for (; ; )
             {
                 //Once the Kick Stage is burning the eccentricity will fall,
@@ -868,6 +932,7 @@
         //Ends the mod when the engine is burned out
         IEnumerator coroutinePreApsideBurnOut()
         {
+            activeCoroutine = 8;
             for (; ; )
             {
                 //Looking up if the engine flamed out
@@ -997,6 +1062,8 @@
 
                 //Update the size of the PAW
                 MonoUtilities.RefreshPartContextWindow(part);
+
+                activeCoroutine = 0;
             }
         }
 
@@ -1022,6 +1089,10 @@
     public class BenjisDelayedRCS : PartModule//ModuleRCS*
     {
         #region Fields
+
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
 
         //Saving UniversalTime into launchTime when the Vessel gets launched
         [KSPField(isPersistant = true, guiActive = false)]
@@ -1112,10 +1183,27 @@
             base.OnStart(state);
         }
 
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutinePostLaunch());
+            else if (activeCoroutine == 3)
+                StartCoroutine(coroutinePreApsideWait());
+            else if (activeCoroutine == 4)
+                StartCoroutine(coroutinePreApside());
+
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+        }
+
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
+
+            if (activeCoroutine != 0)
+                isLoading();
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -1213,6 +1301,7 @@
         //Gets called every .1 seconds and counts down to 0 after launch
         IEnumerator coroutinePostLaunch()
         {
+            activeCoroutine = 1;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -1233,6 +1322,7 @@
         //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
+            activeCoroutine = 2;
             for (; ; )
             {
                 if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
@@ -1249,6 +1339,7 @@
         //Gets called every .1 seconds and counts down to 0 leading up to the next Apside
         IEnumerator coroutinePreApside()
         {
+            activeCoroutine = 3;
             for (; ; )
             {
                 //Calculate how long until the engine ignites
@@ -1320,6 +1411,8 @@
 
                 //Update the size of the PAW
                 MonoUtilities.RefreshPartContextWindow(part);
+
+                activeCoroutine = 0;
             }
         }
 
@@ -1339,6 +1432,10 @@
     public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
     {
         #region Fields
+
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
 
         //Catch the slider dragging "bug"
         [KSPField(isPersistant = true, guiActive = false)]
@@ -1412,10 +1509,20 @@
             base.OnStart(state);
         }
 
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutinePostLaunch());
+        }
+
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
+
+            if (activeCoroutine != 0)
+                isLoading();
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -1488,6 +1595,7 @@
         //Gets called every .1 seconds and checks if the desired height is reached
         IEnumerator coroutinePostLaunch()
         {
+            activeCoroutine = 1;
             for (; ; )
             {
                 //Are we high enough to separate...
@@ -1518,6 +1626,8 @@
 
             //Update the size of the PAW
             MonoUtilities.RefreshPartContextWindow(part);
+
+            activeCoroutine = 0;
         }
 
         //Gets called when the part explodes etc.
