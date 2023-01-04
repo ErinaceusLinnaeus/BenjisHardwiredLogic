@@ -2,6 +2,7 @@
 {
     using System.Collections;
     using System.Threading;
+    using System.Threading.Tasks;
     using UnityEngine;
 
     public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
@@ -105,10 +106,10 @@
         }
 
         //Initialize all the fields when in FLIGHT
-        private void initMod()
+        private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            Thread.Sleep(200);
+            await Task.Delay(250);
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -472,10 +473,10 @@
         }
 
         //Initialize all the fields when in FLIGHT
-        private void initMod()
+        private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            Thread.Sleep(200);
+            await Task.Delay(250);
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -1111,10 +1112,10 @@
             base.OnStart(state);
         }
 
-        private void initMod()
+        private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            Thread.Sleep(200);
+            await Task.Delay(250);
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
@@ -1411,10 +1412,10 @@
             base.OnStart(state);
         }
 
-        private void initMod()
+        private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            Thread.Sleep(200);
+            await Task.Delay(250);
 
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
