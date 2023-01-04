@@ -1,13 +1,8 @@
 ﻿namespace BenjisHardwiredLogic
 {
-    using KSP.UI.Screens;
-    using System;
     using System.Collections;
-    using System.Reflection;
-    using System.Security.Claims;
     using System.Threading;
     using UnityEngine;
-    using VehiclePhysics;
 
     public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
     {
@@ -273,17 +268,17 @@
                 if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
                     //Time to announce the upcoming ignition event
-                    if (nextMessageStep == 0 && PAWtimeToDecouple <= 10)
+                    if (nextMessageStep == 0 && PAWtimeToDecouple <= 10 && PAWtimeToDecouple > 5)
                     {
                         ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 1 && PAWtimeToDecouple <= 5)
+                    else if (nextMessageStep == 1 && PAWtimeToDecouple <= 5 && PAWtimeToDecouple > 2)
                     {
                         ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 2 && PAWtimeToDecouple <= 2)
+                    else if (nextMessageStep == 2 && PAWtimeToDecouple <= 2 && PAWtimeToDecouple > 0)
                     {
                         ScreenMessages.PostScreenMessage("Decoupling " + stage + " in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
@@ -698,16 +693,23 @@
         {
             for (; ; )
             {
-                if (vessel.orbit.ApA / 1000 >= targetApogee)
+                if ((vessel.orbit.ApA / 1000) >= targetApogee)
                 {
                     //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
+                    cutEngine();
+
+                    //Does the user want messages?
+                    if (eventMessagingWanted)
+                    {
+                        //Showing the engine cutt-off message
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApogee + " km)", 10.0f, ScreenMessageStyle.UPPER_CENTER);
+                    }
                     endMod();
                     StopCoroutine(coroutinePostLaunchCut());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(.1f);
+                yield return new WaitForSeconds(0.1f);
             }
         }
 
@@ -737,7 +739,7 @@
 
                 if (PAWtimeToIgnite <= 0)
                 {
-                    //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Ago
+                    //If this engine is a Kick Stage that needs to be cut off at a specific Apside, we need to check the current Apsides and the target-Apside, to see if we need to cut at Peri or Apo
                     if (engineType == "Apogee Kick Stage")
                     {
                         if (apKickMode == "Cut-Off")
@@ -755,10 +757,7 @@
                                 StopCoroutine(coroutinePreApside());
                             }
                         }
-                        //If this engine is a Kick Stage that tries to circularize, we need to check the current Apsides in mind, because checks like this...
-                        //...vessel.orbit.PeA >= vessel.orbit.ApA...
-                        //...vessel.orbit.PeA == vessel.orbit.ApA...
-                        //...will of course not work. Dummy me.
+                        //If we try to circularize we need to check the eccentricity and cut the burn as close to zero eccentricity as possible
                         else if (apKickMode == "Circularize")
                         {
                             //Keep the current eccentricity in mind
@@ -766,6 +765,7 @@
                             StartCoroutine(coroutinePreApsideCircularize());
                             StopCoroutine(coroutinePreApside());
                         }
+                        //Just keep burning
                         else if (apKickMode == "Burn-Out")
                         {
                             StartCoroutine(coroutinePreApsideBurnOut());
@@ -790,13 +790,14 @@
                 if ((vessel.orbit.ApA / 1000) >= targetApside)
                 {
                     //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
+                    cutEngine();
+
                     endMod();
                     //Does the user want messages?
                     if (eventMessagingWanted)
                     {
                         //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Apogee of " + (int)(vessel.orbit.ApA / 1000) + " km. (Target: " + targetApogee + " km)", 10.0f, ScreenMessageStyle.UPPER_CENTER);
                     }
                     yield break;
                 }
@@ -812,13 +813,14 @@
                 if ((vessel.orbit.PeA / 1000) >= targetApside)
                 {
                     //...cut the engine
-                    FlightInputHandler.state.mainThrottle = 0;
+                    cutEngine();
+
                     endMod();
                     //Does the user want messages?
                     if (eventMessagingWanted)
                     {
                         //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at an Perigee of " + (int)(vessel.orbit.PeA / 1000) + " km. (Target: " + targetApside + " km)", 10.0f, ScreenMessageStyle.UPPER_CENTER);
                     }
                     yield break;
                 }
@@ -847,13 +849,14 @@
                 {
                     //...cut the engine
                     FlightInputHandler.state.mainThrottle = 0;
+
                     endMod();
 
                     //Does the user want messages?
                     if (eventMessagingWanted)
                     {
                         //Showing the engine cutt-off message
-                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + " with an eccentricity of " + vessel.orbit.eccentricity + ".", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Cutting " + engineType + " at " + (int)(vessel.orbit.PeA / 1000) + "x" + (int)(vessel.orbit.ApA / 1000) + " with an eccentricity of " + vessel.orbit.eccentricity + ".", 10.0f, ScreenMessageStyle.UPPER_CENTER);
                     }
                     yield break;
                 }
@@ -891,17 +894,17 @@
                 if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
                     //Time to announce the upcoming ignition event
-                    if (nextMessageStep == 0 && PAWtimeToIgnite <= 10)
+                    if (nextMessageStep == 0 && PAWtimeToIgnite <= 10 && PAWtimeToIgnite > 5)
                     {
                         ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5)
+                    else if (nextMessageStep == 1 && PAWtimeToIgnite <= 5 && PAWtimeToIgnite > 2)
                     {
                         ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2)
+                    else if (nextMessageStep == 2 && PAWtimeToIgnite <= 2 && PAWtimeToIgnite > 0)
                     {
                         ScreenMessages.PostScreenMessage("Igniting " + engineType + " in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
@@ -921,13 +924,57 @@
         private void igniteEngine()
         {
             //Make sure throttle is at 100%
-            //Will maybe be at 0% after timewarping and definitely when the PostLaunch-cutAtApogee feature is used
+            //Might be at 0% after timewarping
             FlightInputHandler.state.mainThrottle = 100;
             //Starts the engine
             part.force_activate();
             //Hide the timeToIgnition once the engine burns
             Fields[nameof(PAWtimeToIgnite)].guiActive = false;
 
+        }
+
+        //Cut the engine
+        private void cutEngine()
+        {
+            //...cut the engine
+            FlightInputHandler.state.mainThrottle = 0;
+
+            StartCoroutine(coroutineCheckCutStatus());
+        }
+
+        //#############################################################################################
+        //# Reason why setting mainThrottle might "fail":                                             #
+        //# Using MechJeb's AscentGuidance seems to be last in line setting the main throttle         #
+        //# Or any other flight control mod that sets throttle                                        #
+        //#############################################################################################
+        IEnumerator coroutineCheckCutStatus()
+        {
+            for (; ; )
+            {
+                //Checking fifty times every 0.01sec => .5seconds. Should be enough, even with bad physics-/framerates
+                int i = 0;
+                while (i < 50)
+                {
+                    //If a flight control mod sets this back to 1...
+                    if (FlightInputHandler.state.mainThrottle == 1)
+                    {
+                        //...toggle this engine's (individual) throttle
+                        part.FindModuleImplementing<ModuleEngines>().ToggleThrottle(new KSPActionParam(0, 0));
+
+                        StopCoroutine(coroutineCheckCutStatus());
+                        yield break;
+
+                    }
+                    else
+                    {
+                        i++;
+                        yield return new WaitForSeconds(0.01f);
+                    }
+                }
+                //If nothing sets the throttle to 1 in half a second, then it should be fine
+                StopCoroutine(coroutineCheckCutStatus());
+                yield break;
+            }
         }
 
         //Hide all the fields
@@ -964,6 +1011,7 @@
             StopCoroutine(coroutinePreApsideCutAtApogee());
             StopCoroutine(coroutinePreApsideCutAtPerigee());
             StopCoroutine(coroutinePreApsideBurnOut());
+            StopCoroutine(coroutineCheckCutStatus());
             StopCoroutine(coroutinePrintMessage());
         }
 
@@ -1224,17 +1272,17 @@
                 if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
                     //Time to announce the upcoming ignition event
-                    if (nextMessageStep == 0 && PAWtimeToActivate <= 10)
+                    if (nextMessageStep == 0 && PAWtimeToActivate <= 10 && PAWtimeToActivate > 5)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 10 seconds.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 1 && PAWtimeToActivate <= 5)
+                    else if (nextMessageStep == 1 && PAWtimeToActivate <= 5 && PAWtimeToActivate > 2)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 5 seconds.", 2.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 2 && PAWtimeToActivate <= 2)
+                    else if (nextMessageStep == 2 && PAWtimeToActivate <= 2 && PAWtimeToActivate > 0)
                     {
                         ScreenMessages.PostScreenMessage("Activating RCS in 2 seconds.", 1.5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
@@ -1406,16 +1454,18 @@
         {
             if (modInUse)
             {
-                Fields[nameof(PAWheightToSeparate)].guiActiveEditor = true;
+                Fields[nameof(heightToSeparate)].guiActiveEditor = true;
+                Fields[nameof(PAWfairing)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
             {
                 //If this gui or any other is visible now, then we seem to change this in the next steps
-                if (Fields[nameof(PAWheightToSeparate)].guiActiveEditor)
+                if (Fields[nameof(heightToSeparate)].guiActiveEditor)
                     negChangeHappened = true;
 
-                Fields[nameof(PAWheightToSeparate)].guiActiveEditor = false;
+                Fields[nameof(heightToSeparate)].guiActiveEditor = false;
+                Fields[nameof(PAWfairing)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
