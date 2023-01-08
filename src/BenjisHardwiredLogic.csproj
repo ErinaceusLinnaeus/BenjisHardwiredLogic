@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BenjisHardwiredLogic</RootNamespace>
     <AssemblyName>BenjisHardwiredLogic</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -69,23 +70,28 @@
     <None Include="Properties\CHANGELOG.md" />
     <None Include="Properties\README.md" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assembly-CSharp.dll" />
+    <Content Include="UnityEngine.CoreModule.dll" />
+    <Content Include="UnityEngine.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>//BenjisHardwiredLogic.dll
 //delete old files
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
-del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
 //copy new files
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
 //BenjisHardwiredLogic.cfg
 //delete old files
-del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 //copy new files
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
@@ -93,20 +99,20 @@ copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHar
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\CHANGELOG.md"
-del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 //copy new files
 copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
 //README.md
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\README.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\README.md"
-del /f "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\README.md"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\README.md"
 //copy new files
 copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)Properties\README.md" "A:\Spiele\steam\steamapps\common\Kerbal Space Program\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
+copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

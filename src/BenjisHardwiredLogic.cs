@@ -1,9 +1,9 @@
-﻿namespace BenjisHardwiredLogic
-{
-    using System.Collections;
-    using System.Threading.Tasks;
-    using UnityEngine;
+﻿using System.Collections;
+using System.Threading.Tasks;
+using UnityEngine;
 
+namespace BenjisHardwiredLogic
+{
     public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
     {
         #region Fields
@@ -1427,7 +1427,7 @@
 
         #endregion
     }
-
+    
     public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
     {
         #region Fields
