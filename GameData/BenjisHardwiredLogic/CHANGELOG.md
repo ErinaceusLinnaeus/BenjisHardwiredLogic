@@ -1,4 +1,13 @@
 ## Changelog:
+##### v2.0.0
+##### MUCH NEEDED CODE CELANUP:
+##### Jumping to version 2.0.0.
+##### BREAKS COMPATIBILITY: Vessel loading will mark old vessels as missing Modules and most Data will be lost and needs to be reconfigured.
+##### - Complete code clean up (slimer, faster, easier, more reliable ...(too many bools and checks that kept piling up while I was adding functionality)
+##### - Decoupler, Engines and RCS can now be triggered with a pre-delay, counting towards the Apogee after a launch. Usecase: Apogee Kick Stages
+##### - Three Apogee Kick Stage cut-off modes (Full Burn (un-cut), Cut-Off at a set PE/AP, Cut-Off when the orbit is (as close as possible to) circular)
+##### - An Engine can also automatically cut-off when reaching a set Apside
+##### - Event Messaging can now also be toggle in Flight
 ##### v1.2.2
 ##### MORE MESSAGING OPTIONS:
 ##### - Added a rare 4th Stage and a Spin-Motor Option for Igniting and Seperating

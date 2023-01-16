@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BenjisHardwiredLogic
 {
@@ -14,7 +10,7 @@ namespace BenjisHardwiredLogic
         {
             return ((Math.PI / 180d) * deg);
         }
-        
+
         public static double radToDeg(double rad)
         {
             return ((180d / Math.PI) * rad);
