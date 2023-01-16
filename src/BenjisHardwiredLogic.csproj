@@ -67,6 +67,7 @@
       <Link>.editorconfig</Link>
     </None>
     <None Include="BenjisHardwiredLogic.cfg" />
+    <None Include="Properties\BenjisHardwiredWayToOrbit.pdf" />
     <None Include="Properties\CHANGELOG.md" />
     <None Include="Properties\README.md" />
   </ItemGroup>
@@ -113,6 +114,16 @@ del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\README.md"
 //copy new files
 copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
+copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
+
+//BenjisHardwiredWayToOrbit.pdf
+//delete old files
+del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
+//copy new files
+copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

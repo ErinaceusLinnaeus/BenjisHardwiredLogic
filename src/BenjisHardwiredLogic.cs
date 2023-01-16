@@ -65,7 +65,7 @@ namespace BenjisHardwiredLogic
 
         //Name what the stage that will be decoupled will be called during event messaging
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName),
-            UI_ChooseOption(options = new string[12] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Apogee Kick Stage", "Payload", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Spin-/Ullage-Motor", "Apogee Kick Stage" })]
+            UI_ChooseOption(options = new string[9] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Spin-Motor", "Ullage-Motor", "Apogee Kick Stage", "Payload" })]
         private string stage = "1st Stage";
 
         //The PAW fields in Flight
@@ -436,12 +436,12 @@ namespace BenjisHardwiredLogic
 
         //Name what the engine will be called during event messaging
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Engine", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_ChooseOption(options = new string[10] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Spin-/Ullage-Motor", "Apogee Kick Stage" })]
+            UI_ChooseOption(options = new string[9] { "1st Stage", "2nd Stage", "3rd Stage", "4th Stage", "Booster", "Separation-Motor", "Spin-Motor", "Ullage-Motor", "Apogee Kick Stage" })]
         private string engineType = "1st Stage";
 
         //Specify how to treat the kick stage
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Kick Stage Mode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName),
-            UI_ChooseOption(options = new string[3] { "Burn-Out", "Cut-Off", "Circularize" })]
+            UI_ChooseOption(options = new string[3] { "Burn-Out", "Circularize", "Cut-Off" })]
         private string apKickMode = "Burn-Out";
 
         //Set which apside the kick stage should aim for
@@ -1466,9 +1466,9 @@ namespace BenjisHardwiredLogic
         private bool modInUse = false;
 
         //Specify the Height in kilometers in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Height [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Altitude [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
         UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
-        private float heightToSeparate = 60;
+        private float altitudeToSeparate = 75;
 
         //A button to enable or disable if a message for this event will be shown
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
@@ -1482,8 +1482,8 @@ namespace BenjisHardwiredLogic
         private string PAWmodInUse;
 
         //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Height to Separate", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private float PAWheightToSeparate = 0;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Altitude to Jettison", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        private float PAWaltitudeToJettison = 0;
 
         //Shown in the Editor and in Flight
         //A button to enable or disable if a message for this event will be shown
@@ -1531,7 +1531,7 @@ namespace BenjisHardwiredLogic
                 {
                     PAWmodInUse = StringConnected;
                     //Set the text for inFlight Information
-                    PAWheightToSeparate = heightToSeparate;
+                    PAWaltitudeToJettison = altitudeToSeparate;
 
                     GameEvents.onLaunch.Add(isLaunched);
                     GameEvents.onPartDie.Add(isDead);
@@ -1540,7 +1540,7 @@ namespace BenjisHardwiredLogic
                 {
                     PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
-                    Fields[nameof(PAWheightToSeparate)].guiActive = false;
+                    Fields[nameof(PAWaltitudeToJettison)].guiActive = false;
                 }
 
             }
@@ -1561,17 +1561,17 @@ namespace BenjisHardwiredLogic
         {
             if (modInUse)
             {
-                Fields[nameof(heightToSeparate)].guiActiveEditor = true;
+                Fields[nameof(altitudeToSeparate)].guiActiveEditor = true;
                 Fields[nameof(PAWfairing)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
             {
                 //If this gui or any other is visible now, then we seem to change this in the next steps
-                if (Fields[nameof(heightToSeparate)].guiActiveEditor)
+                if (Fields[nameof(altitudeToSeparate)].guiActiveEditor)
                     negChangeHappened = true;
 
-                Fields[nameof(heightToSeparate)].guiActiveEditor = false;
+                Fields[nameof(altitudeToSeparate)].guiActiveEditor = false;
                 Fields[nameof(PAWfairing)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
@@ -1598,7 +1598,7 @@ namespace BenjisHardwiredLogic
             for (; ; )
             {
                 //Are we high enough to separate...
-                if (vessel.orbit.altitude >= (PAWheightToSeparate * 1000f))
+                if (vessel.orbit.altitude >= (PAWaltitudeToJettison * 1000f))
                 {
                     //Does the user want messages?
                     if (eventMessagingWanted)
@@ -1620,7 +1620,7 @@ namespace BenjisHardwiredLogic
             modInUse = false;
             PAWmodInUse = StringDisconnected;
             //Disable all text for inFlight Information
-            Fields[nameof(PAWheightToSeparate)].guiActive = false;
+            Fields[nameof(PAWaltitudeToJettison)].guiActive = false;
             Fields[nameof(eventMessagingWanted)].guiActive = false;
 
             //Update the size of the PAW
