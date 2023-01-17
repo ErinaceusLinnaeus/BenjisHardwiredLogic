@@ -100,20 +100,24 @@ copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHar
 //CHANGELOG.md
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+del /f "$(ProjectDir)..\CHANGELOG.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 //copy new files
 copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
 //README.md
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\README.md"
+del /f "$(ProjectDir)..\README.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\README.md"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\README.md"
 //copy new files
 copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
