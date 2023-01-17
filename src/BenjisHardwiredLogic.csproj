@@ -67,6 +67,7 @@
       <Link>.editorconfig</Link>
     </None>
     <None Include="BenjisHardwiredLogic.cfg" />
+    <None Include="Properties\BenjisHardwiredLogic.version" />
     <None Include="Properties\BenjisHardwiredWayToOrbit.pdf" />
     <None Include="Properties\CHANGELOG.md" />
     <None Include="Properties\README.md" />
@@ -124,6 +125,16 @@ del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOr
 //copy new files
 copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
+copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
+
+//BenjisHardwiredLogic.version
+//delete old files
+del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
+del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
+del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
+//copy new files
+copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

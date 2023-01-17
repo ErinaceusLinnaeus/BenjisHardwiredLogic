@@ -1,4 +1,7 @@
 ## Changelog:
+##### v2.0.1
+##### - Include a .version file to let ckan know exactly about downwards compatibility
+##### - Corrected an error in the pdf (the Fairing separator doesn't have a delay mode, stupid copy-paste mistake)
 ##### v2.0.0
 ##### MUCH NEEDED CODE CELANUP:
 ##### Jumping to version 2.0.0.
