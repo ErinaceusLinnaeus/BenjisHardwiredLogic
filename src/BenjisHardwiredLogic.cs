@@ -6,10 +6,21 @@ namespace BenjisHardwiredLogic
 {
     public class BenjisAutoAscent : PartModule //ModuleSAS
     {
-        // Curves that describe the launch profile
-        // ALT < 24km               :   100 * x^0.58
-        // 24km < ALT < 82km        :   -0.000004 * x^2 + 1.2 * x + 10000
-        // 82km < ALT < end turn    :   -456000 + 47500 * ln(x)
+        // Curves that describe the launch profile visually
+        // ALT < 25km               :   102.5 * x^0.58
+        // 25km < ALT < 82.5km      :   -0.000004 * x^2 + 1.2 * x + 10000
+        // 82.5km < ALT < end turn  :   -456000 + 47500 * ln(x)
+
+        // x    : ALT
+        // f(x) : Downrange
+        // ALT <= 76km      :   0.00174397 x^(1.5626)
+        // ALT >  76km      :   15400 ℯ^(0.00002063 x)
+
+        // x = ALT
+        // f(x) : pitch
+        // ALT < 10km               :   0.18*x^2 - 4.5x + 90
+        // 10km < ALT < 80km        :   0.0038*x^2 - 0.87*x + 71.34
+        // 80km < ALT < 216.309km   :   0.0004*x2 - 0.31*x + 48.34
 
         #region Fields
         #endregion
