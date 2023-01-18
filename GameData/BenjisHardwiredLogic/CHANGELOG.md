@@ -1,4 +1,6 @@
 ## Changelog:
+##### 2.1.0
+##### - Ascent Guidance
 ##### 2.0.1
 ##### - Include a .version file to let ckan know exactly about downwards compatibility
 ##### - Corrected an error in the pdf (the Fairing separator doesn't have a delay mode, stupid copy-paste mistake)

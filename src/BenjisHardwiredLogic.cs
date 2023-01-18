@@ -4,7 +4,20 @@ using UnityEngine;
 
 namespace BenjisHardwiredLogic
 {
-    public class BenjisDelayedDecoupler : PartModule//Module*Decouple*
+    public class BenjisAutoAscent : PartModule //ModuleSAS
+    {
+        // Curves that describe the launch profile
+        // ALT < 24km               :   100 * x^0.58
+        // 24km < ALT < 82km        :   -0.000004 * x^2 + 1.2 * x + 10000
+        // 82km < ALT < end turn    :   -456000 + 47500 * ln(x)
+
+        #region Fields
+        #endregion
+
+        #region Overrides
+        #endregion
+    }
+    public class BenjisDelayedDecoupler : PartModule //Module*Decouple*
     {
         #region Fields
 
@@ -359,7 +372,7 @@ namespace BenjisHardwiredLogic
         #endregion
     }
 
-    public class BenjisDelayedIgniter : PartModule//ModuleEngines*
+    public class BenjisDelayedIgniter : PartModule //ModuleEngines*
     {
         #region Fields
 
@@ -1085,7 +1098,7 @@ namespace BenjisHardwiredLogic
         #endregion
     }
 
-    public class BenjisDelayedRCS : PartModule//ModuleRCS*
+    public class BenjisDelayedRCS : PartModule //ModuleRCSFX
     {
         #region Fields
 
@@ -1427,8 +1440,8 @@ namespace BenjisHardwiredLogic
 
         #endregion
     }
-    
-    public class BenjisFairingSeparator : PartModule//ProceduralFairingDecoupler
+
+    public class BenjisFairingSeparator : PartModule //ProceduralFairingDecoupler
     {
         #region Fields
 
