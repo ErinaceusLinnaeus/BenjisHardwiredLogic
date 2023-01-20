@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -23,6 +24,24 @@ namespace BenjisHardwiredLogic
         // 80km < ALT < 216.309km   :   0.0004*x2 - 0.31*x + 48.34
 
         #region Fields
+
+        //Saving UniversalTime into launchTime when the Vessel getÞs launched
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double launchTime = 0;
+
+        //The azimuth we're heading at
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double azimuth = 0;
+
+        //Save the direction we need to pitch and yaw to, depending on the azimuth and how the rocket is oriented on the pad
+        //x: pitch
+        //y: yaw
+        [KSPField(isPersistant = true, guiActive = false)]
+        UnityEngine.Vector2d headingToAzimuth;
+
+        //The azimuth we're heading at
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double desiredPitch = 0;
 
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
@@ -49,6 +68,16 @@ namespace BenjisHardwiredLogic
 
         [KSPField(isPersistant = true, guiActive = false)]
         private const string StringActive = "active";
+
+        //Creating an orbitalFrame, saving the initial state...just like a gimbal
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d orbitalPrograde;
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d orbitalRadial;
+        [KSPField(isPersistant = true, guiActive = false)]
+        UnityEngine.Quaternion orbitalFrame;
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d orbitalNormal;
 
         //The PAW fields in the editor
         //A button to enable or disable the module
@@ -80,6 +109,27 @@ namespace BenjisHardwiredLogic
 
         #endregion
 
+        #region steering delegates
+
+        void steeringStraightUp(FlightCtrlState state)
+        {
+            state.pitch = 0;
+            state.yaw = 0;
+            state.roll = 0;
+        }
+        void steeringRollManeuver(FlightCtrlState state)
+        {
+            //Ship's pointing that way
+            Vector3d shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
+            double rollAngle = HelperFunctions.degAngle(shipLeft, orbitalRadial);
+
+            state.pitch = 0;
+            state.yaw = 0;
+            state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 20d), 0.05);
+        }
+
+        #endregion
+
         #region Overrides
 
         //This happens once in both EDITOR and FLIGHT
@@ -99,15 +149,15 @@ namespace BenjisHardwiredLogic
         private void isLoading()
         {
             if (activeCoroutine == 1)
-                StartCoroutine(coroutineOrientationRoll());
+                StartCoroutine(coroutineRollManeuver());
             else if (activeCoroutine == 2)
-                StartCoroutine(coroutineInitialPitch());
-            else if (activeCoroutine == 3)
                 StartCoroutine(coroutinePitchCurveNr1());
-            else if (activeCoroutine == 4)
+            else if (activeCoroutine == 3)
                 StartCoroutine(coroutinePitchCurveNr2());
-            else if (activeCoroutine == 5)
+            else if (activeCoroutine == 4)
                 StartCoroutine(coroutinePitchCurveNr3());
+            else if (activeCoroutine == 5)
+                StartCoroutine(coroutineLeveledFlight());
 
             if (eventMessagingWanted)
                 StartCoroutine(coroutinePrintMessage());
@@ -184,36 +234,72 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
-            StartCoroutine(coroutineOrientationRoll());
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            //Creating an orbitalFrame, saving the initial state...just like a gimbal
+            orbitalPrograde = vessel.obt_velocity.normalized;
+            orbitalRadial = (vessel.CoMD - vessel.mainBody.position).normalized;
+            //Not used right now, but to have it complete:
+            orbitalFrame = UnityEngine.QuaternionD.LookRotation(orbitalPrograde, orbitalRadial);
+            orbitalNormal = orbitalFrame * Vector3d.left;
+
+            if (desiredInclination < vessel.latitude)
+                azimuth = vessel.latitude;
+            else
+                azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(vessel.latitude)))));
+
+            //Rotate the ships coordinates, so we match the desired launch direction and get the correct pitch and yaw settings
+            if (desiredDirectionToLaunch == "SE")
+            {
+                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
+                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
+                headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+            else if (desiredDirectionToLaunch == "NE")
+            {
+                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
+                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
+                headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+            else if (desiredDirectionToLaunch == "NW")
+            {
+                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
+                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
+                headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+            else if (desiredDirectionToLaunch == "SW")
+            {
+                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
+                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
+                headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+
+
+            vessel.OnFlyByWire += steeringStraightUp;
+
+            StartCoroutine(coroutineRollManeuver());
         }
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        IEnumerator coroutineOrientationRoll()
+        //The roll maneuver rolls the rockets bottom to the horizon
+        //-> The rocket's directions of pitch will match the gravity...
+        //...and rocket's yaw will correspond to inclination, so we can get into the correct azimuth
+        IEnumerator coroutineRollManeuver()
         {
             activeCoroutine = 1;
             for (; ; )
             {
-                if (ALT <= Something)
+                if (vessel.verticalSpeed >= 20)
                 {
-                    StartCoroutine(coroutineInitialPitch());
-                    StopCoroutine(coroutineOrientationRoll());
-                    yield break;
-                }
+                    vessel.OnFlyByWire -= steeringStraightUp;
+                    vessel.OnFlyByWire += steeringRollManeuver;
 
-                yield return new WaitForSeconds(.1f);
-            }
-        }
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        IEnumerator coroutineInitialPitch()
-        {
-            activeCoroutine = 2;
-            for (; ; )
-            {
-                if (ALT <= Something)
-                {
                     StartCoroutine(coroutinePitchCurveNr1());
-                    StopCoroutine(coroutineInitialPitch());
+                    StopCoroutine(coroutineRollManeuver());
                     yield break;
                 }
 
@@ -221,13 +307,16 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //Calculate and follow the first segment of the gravity turn
         IEnumerator coroutinePitchCurveNr1()
         {
             activeCoroutine = 2;
             for (; ; )
             {
-                if (ALT <= Something)
+                double x = vessel.orbit.altitude;
+                desiredPitch = (0.18 * Math.Sqrt(x)) - (4.5 * x) + 90;
+
+                if (vessel.orbit.altitude > 10000)
                 {
                     StartCoroutine(coroutinePitchCurveNr2());
                     StopCoroutine(coroutinePitchCurveNr1());
@@ -238,13 +327,16 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //Calculate and follow the second segment of the gravity turn
         IEnumerator coroutinePitchCurveNr2()
         {
-            activeCoroutine = 2;
+            activeCoroutine = 3;
             for (; ; )
             {
-                if (ALT <= Something)
+                double x = vessel.orbit.altitude;
+                desiredPitch = (0.0038 * Math.Sqrt(x)) - (0.87 * x) + 71.34;
+
+                if (vessel.orbit.altitude > 80000)
                 {
                     StartCoroutine(coroutinePitchCurveNr3());
                     StopCoroutine(coroutinePitchCurveNr2());
@@ -255,16 +347,39 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //Calculate and follow the third segment of the gravity turn
         IEnumerator coroutinePitchCurveNr3()
         {
-            activeCoroutine = 2;
+            activeCoroutine = 4;
             for (; ; )
             {
-                if (ALT <= Something)
+                double x = vessel.orbit.altitude;
+                desiredPitch = (0.0004 * Math.Sqrt(x)) - (0.31 * x) + 48.34;
+
+                if (vessel.orbit.altitude > 216309)
+                {
+                    StartCoroutine(coroutineLeveledFlight());
+                    StopCoroutine(coroutinePitchCurveNr3());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutineLeveledFlight()
+        {
+            activeCoroutine = 5;
+            for (; ; )
+            {
+                double x = vessel.orbit.altitude;
+                desiredPitch = (0.0004 * Math.Sqrt(x)) - (0.31 * x) + 48.34;
+
+                if (vessel.orbit.altitude > 216309)
                 {
                     endMod();
-                    StopCoroutine(coroutinePitchCurveNr3());
+                    StopCoroutine(coroutineLeveledFlight());
                     yield break;
                 }
 
@@ -283,17 +398,12 @@ namespace BenjisHardwiredLogic
                     //Time to announce the upcoming ignition event
                     if (nextMessageStep == 0 && activeCoroutine == 1)
                     {
-                        ScreenMessages.PostScreenMessage("Rolling into correct Azimuth.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Rolling into correct Azimuth.", 5f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                     }
-                    else if (nextMessageStep == 1 && activeCoroutine == 2)
+                    else if (nextMessageStep == 1 && activeCoroutine >= 2)
                     {
-                        ScreenMessages.PostScreenMessage("TWR-dependend initial Pitch.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
-                        nextMessageStep++;
-                    }
-                    else if (nextMessageStep == 2 && activeCoroutine >= 3)
-                    {
-                        ScreenMessages.PostScreenMessage("Following the ascent path.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        ScreenMessages.PostScreenMessage("Following the ascent path.", 10f, ScreenMessageStyle.UPPER_CENTER);
                         nextMessageStep++;
                         yield break;
                     }
@@ -325,11 +435,11 @@ namespace BenjisHardwiredLogic
         private void isDead(Part part)
         {
             //Stopping all the coroutines that might be running
-            StopCoroutine(coroutineInitialPitch());
-            StopCoroutine(coroutineOrientationRoll());
+            StopCoroutine(coroutineRollManeuver());
             StopCoroutine(coroutinePitchCurveNr1());
             StopCoroutine(coroutinePitchCurveNr2());
             StopCoroutine(coroutinePitchCurveNr3());
+            StopCoroutine(coroutineLeveledFlight());
             StopCoroutine(coroutinePrintMessage());
         }
 

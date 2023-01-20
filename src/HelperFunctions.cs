@@ -35,6 +35,15 @@ namespace BenjisHardwiredLogic
 
             return radToDeg(Math.Acos(scalarProduct(vector1, vector2)));
         }
+        public static double limitAbs(double one, double two)
+        {
+            if (one > two)
+                return two;
+            if ((-1 * one) > two)
+                return (-1 * two);
+            else
+                return one;
+        }
         #endregion
     }
 }
