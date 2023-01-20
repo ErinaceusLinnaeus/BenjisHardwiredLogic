@@ -23,9 +23,316 @@ namespace BenjisHardwiredLogic
         // 80km < ALT < 216.309km   :   0.0004*x2 - 0.31*x + 48.34
 
         #region Fields
+
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
+
+        //Catch the slider dragging "bug"
+        [KSPField(isPersistant = true, guiActive = false)]
+        private bool negChangeHappened = false;
+
+        //Headline name for the GUI
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string PAWAscentGroupName = "Benji's Auto Ascent";
+
+        //Text, if functionality is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string StringDisconnected = "disconnected";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string StringConnected = "connected";
+
+        //Text, if event messaging is disabled/enabled
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string StringInactive = "inactive";
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private const string StringActive = "active";
+
+        //The PAW fields in the editor
+        //A button to enable or disable the module
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
+        private bool modInUse = false;
+        //Specify the inclination you wanna end up at
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Inclination [°]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 359.9f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
+        private float desiredInclination = 0;
+        //Specify if we should follow the azimuth to the north or the south
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Launchdirection", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_ChooseOption(options = new string[4] { "SE", "NE", "NW", "SW" })]
+        private string desiredDirectionToLaunch = "SE";
+
+        //The PAW fields in Flight
+        //Shows if the decoupler is active
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
+        private string PAWmodInUse;
+
+        //Shown in the Editor and in Flight
+        //A button to enable or disable if a message for this event will be shown
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool eventMessagingWanted = true;
+
+        //A small variable to manage the onScreen Messages
+        private char nextMessageStep = (char)0;
+
         #endregion
 
         #region Overrides
+
+        //This happens once in both EDITOR and FLIGHT
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                initMod();
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
+
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutineOrientationRoll());
+            else if (activeCoroutine == 2)
+                StartCoroutine(coroutineInitialPitch());
+            else if (activeCoroutine == 3)
+                StartCoroutine(coroutinePitchCurveNr1());
+            else if (activeCoroutine == 4)
+                StartCoroutine(coroutinePitchCurveNr2());
+            else if (activeCoroutine == 5)
+                StartCoroutine(coroutinePitchCurveNr3());
+
+            if (eventMessagingWanted)
+                StartCoroutine(coroutinePrintMessage());
+        }
+
+        //Initialize all the fields when in FLIGHT
+        private async void initMod()
+        {
+            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
+            await Task.Delay(250);
+
+            if (activeCoroutine != 0)
+                isLoading();
+
+            //Now to check if we are on the launch pad
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
+                //Set the visible PAW variable 
+                if (modInUse)
+                {
+                    PAWmodInUse = StringConnected;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
+                }
+                else
+                {
+                    PAWmodInUse = StringDisconnected;
+                    //Disable all text for inFlight Information
+                }
+
+            }
+        }
+
+        //Initialize all the fields when in EDITOR
+        private void initEditor()
+        {
+            //refresh the PAW to its new size
+            //We need to do this once, in case the mod is active in a saved ship
+            updateEditorPAW(null);
+
+            GameEvents.onEditorShipModified.Add(updateEditorPAW);
+        }
+
+        //Tweak what fields are shown in the editor
+        private void updateEditorPAW(ShipConstruct ship)
+        {
+            if (modInUse)
+            {
+                Fields[nameof(desiredInclination)].guiActiveEditor = true;
+                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = true;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
+            }
+            else
+            {
+                //If this gui or any other is visible now, then we seem to change this in the next steps
+                if (Fields[nameof(desiredInclination)].guiActiveEditor)
+                    negChangeHappened = true;
+
+                Fields[nameof(desiredInclination)].guiActiveEditor = false;
+                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+            }
+
+            //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+            if (negChangeHappened)
+            {
+                negChangeHappened = false;
+                //refresh the PAW to its new size
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
+
+        //Gets called by the GameEvent when the rocket is launched
+        private void isLaunched(EventReport report)
+        {
+            StartCoroutine(coroutineOrientationRoll());
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutineOrientationRoll()
+        {
+            activeCoroutine = 1;
+            for (; ; )
+            {
+                if (ALT <= Something)
+                {
+                    StartCoroutine(coroutineInitialPitch());
+                    StopCoroutine(coroutineOrientationRoll());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutineInitialPitch()
+        {
+            activeCoroutine = 2;
+            for (; ; )
+            {
+                if (ALT <= Something)
+                {
+                    StartCoroutine(coroutinePitchCurveNr1());
+                    StopCoroutine(coroutineInitialPitch());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutinePitchCurveNr1()
+        {
+            activeCoroutine = 2;
+            for (; ; )
+            {
+                if (ALT <= Something)
+                {
+                    StartCoroutine(coroutinePitchCurveNr2());
+                    StopCoroutine(coroutinePitchCurveNr1());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutinePitchCurveNr2()
+        {
+            activeCoroutine = 2;
+            for (; ; )
+            {
+                if (ALT <= Something)
+                {
+                    StartCoroutine(coroutinePitchCurveNr3());
+                    StopCoroutine(coroutinePitchCurveNr2());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IEnumerator coroutinePitchCurveNr3()
+        {
+            activeCoroutine = 2;
+            for (; ; )
+            {
+                if (ALT <= Something)
+                {
+                    endMod();
+                    StopCoroutine(coroutinePitchCurveNr3());
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //This function will write all the messages on the screen
+        IEnumerator coroutinePrintMessage()
+        {
+            for (; ; )
+            {
+                //Now to check if we are not on the launch pad
+                if (vessel.situation != Vessel.Situations.PRELAUNCH)
+                {
+                    //Time to announce the upcoming ignition event
+                    if (nextMessageStep == 0 && activeCoroutine == 1)
+                    {
+                        ScreenMessages.PostScreenMessage("Rolling into correct Azimuth.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 1 && activeCoroutine == 2)
+                    {
+                        ScreenMessages.PostScreenMessage("TWR-dependend initial Pitch.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                    }
+                    else if (nextMessageStep == 2 && activeCoroutine >= 3)
+                    {
+                        ScreenMessages.PostScreenMessage("Following the ascent path.", 4.5f, ScreenMessageStyle.UPPER_CENTER);
+                        nextMessageStep++;
+                        yield break;
+                    }
+                }
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
+
+        //Hide all the fields
+        private void endMod()
+        {
+            if (modInUse)
+            {
+                modInUse = false;
+                PAWmodInUse = StringDisconnected;
+
+                Fields[nameof(desiredInclination)].guiActiveEditor = false;
+                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
+                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+
+                //Update the size of the PAW
+                MonoUtilities.RefreshPartContextWindow(part);
+
+                activeCoroutine = 0;
+            }
+        }
+
+        //Gets called when the part explodes etc.
+        private void isDead(Part part)
+        {
+            //Stopping all the coroutines that might be running
+            StopCoroutine(coroutineInitialPitch());
+            StopCoroutine(coroutineOrientationRoll());
+            StopCoroutine(coroutinePitchCurveNr1());
+            StopCoroutine(coroutinePitchCurveNr2());
+            StopCoroutine(coroutinePitchCurveNr3());
+            StopCoroutine(coroutinePrintMessage());
+        }
+
         #endregion
     }
     public class BenjisDelayedDecoupler : PartModule //Module*Decouple*
