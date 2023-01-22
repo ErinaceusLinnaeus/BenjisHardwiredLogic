@@ -19,9 +19,9 @@ namespace BenjisHardwiredLogic
 
         // x = ALT
         // f(x) : pitch
-        // ALT < 10km               :   0.18*x^2 - 4.5x + 90
-        // 10km < ALT < 80km        :   0.0038*x^2 - 0.87*x + 71.34
-        // 80km < ALT < 216.309km   :   0.0004*x2 - 0.31*x + 48.34
+        // ALT < 10.075 m             :   (0.014013 * (x*x*x)) - (0.448716 * (x*x)) + (5.730697 * x) + 0.32134
+        // 10.075 m < ALT < 97.800 m  :   (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515
+        // 80.000 m < ALT < 240.000 m :   -(0.000889 * (x*x)) + (0.456161 * x) + 31.754229
 
         #region Fields
 
@@ -127,12 +127,18 @@ namespace BenjisHardwiredLogic
             state.yaw = 0;
             state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 20d), 0.05);
         }
+        void steeringLeveledFlight(FlightCtrlState state)
+        {
+            state.pitch = 0;
+            state.yaw = 0;
+            state.roll = 0;
+        }
 
         #endregion
 
-        #region Overrides
+            #region Overrides
 
-        //This happens once in both EDITOR and FLIGHT
+            //This happens once in both EDITOR and FLIGHT
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
@@ -313,17 +319,27 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 2;
             for (; ; )
             {
-                double x = vessel.orbit.altitude;
-                desiredPitch = (0.18 * Math.Sqrt(x)) - (4.5 * x) + 90;
+                vessel.OnFlyByWire -= steeringRollManeuver;
 
-                if (vessel.orbit.altitude > 10000)
+                double x = vessel.orbit.altitude / 1000.0d;
+                desiredPitch = (0.014013 * (x*x*x)) - (0.448716 * (x*x)) + (5.730697 * x) + 0.32134;
+
+                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
+                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
+
+                ScreenMessages.PostScreenMessage("1) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("1) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("1) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+
+                if (vessel.orbit.altitude > 10075)
                 {
                     StartCoroutine(coroutinePitchCurveNr2());
                     StopCoroutine(coroutinePitchCurveNr1());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(.1f);
+                //yield return new WaitForSeconds(.1f);
+                yield return new WaitForSeconds(1.1f);
             }
         }
 
@@ -333,17 +349,25 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 3;
             for (; ; )
             {
-                double x = vessel.orbit.altitude;
-                desiredPitch = (0.0038 * Math.Sqrt(x)) - (0.87 * x) + 71.34;
+                double x = vessel.orbit.altitude / 1000.0d;
+                desiredPitch = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
 
-                if (vessel.orbit.altitude > 80000)
+                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
+                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
+
+                ScreenMessages.PostScreenMessage("2) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("2) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("2) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+
+                if (vessel.orbit.altitude > 97800)
                 {
                     StartCoroutine(coroutinePitchCurveNr3());
                     StopCoroutine(coroutinePitchCurveNr2());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(.1f);
+                //yield return new WaitForSeconds(.1f);
+                yield return new WaitForSeconds(1.1f);
             }
         }
 
@@ -353,17 +377,25 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 4;
             for (; ; )
             {
-                double x = vessel.orbit.altitude;
-                desiredPitch = (0.0004 * Math.Sqrt(x)) - (0.31 * x) + 48.34;
+                double x = vessel.orbit.altitude / 1000.0d;
+                desiredPitch = -(0.000889 * (x*x)) + (0.456161 * x) + 31.754229;
 
-                if (vessel.orbit.altitude > 216309)
+                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
+                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
+
+                ScreenMessages.PostScreenMessage("3) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("3) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("3) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+
+                if (vessel.orbit.altitude > 240000)
                 {
                     StartCoroutine(coroutineLeveledFlight());
                     StopCoroutine(coroutinePitchCurveNr3());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(.1f);
+                //yield return new WaitForSeconds(.1f);
+                yield return new WaitForSeconds(1.1f);
             }
         }
 
@@ -373,8 +405,8 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 5;
             for (; ; )
             {
-                double x = vessel.orbit.altitude;
-                desiredPitch = (0.0004 * Math.Sqrt(x)) - (0.31 * x) + 48.34;
+
+                vessel.OnFlyByWire += steeringLeveledFlight;
 
                 if (vessel.orbit.altitude > 216309)
                 {
