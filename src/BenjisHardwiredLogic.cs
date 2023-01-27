@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using static Targeting;
 
 namespace BenjisHardwiredLogic
 {
@@ -39,9 +40,28 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         UnityEngine.Vector2d headingToAzimuth;
 
-        //The azimuth we're heading at
+        //Keeping track of the pitch rate
         [KSPField(isPersistant = true, guiActive = false)]
         private double desiredPitch = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double tMinus1Pitch = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double tZeroPitch = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double deltaPitch = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double tMinus1Yaw = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double tZeroYaw = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double deltaYaw = 0;
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularPitch = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularYaw = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularRoll = 0;
 
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
@@ -113,9 +133,33 @@ namespace BenjisHardwiredLogic
 
         void steeringStraightUp(FlightCtrlState state)
         {
-            state.pitch = 0;
-            state.yaw = 0;
-            state.roll = 0;
+            //angularvelocity:
+            //x : -pitch
+            //y : -roll
+            //z : -yaw
+            //ScreenMessages.PostScreenMessage("x : " + Math.Round(vessel.angularVelocityD.x, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+            //ScreenMessages.PostScreenMessage("y : " + Math.Round(vessel.angularVelocityD.y, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+            //ScreenMessages.PostScreenMessage("z : " + Math.Round(vessel.angularVelocityD.z, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+            
+            sumOfAngularPitch += vessel.angularVelocityD.x;
+            sumOfAngularYaw += vessel.angularVelocityD.z;
+            sumOfAngularRoll += vessel.angularVelocityD.y;
+            /*
+            //need a non-linear "easing-curve" for steering
+            float steeringAggressiveness = 0.5f;
+
+            state.pitch = steeringAggressiveness * (float)sumOfAngularPitch;
+            state.yaw = steeringAggressiveness * (float)sumOfAngularYaw;
+            state.roll = steeringAggressiveness * (float)sumOfAngularRoll;
+
+            */
+
+
+            float steeringAggressiveness = 51f;
+
+            state.pitch = (steeringAggressiveness * (float)vessel.angularVelocityD.x) / TimeWarp.CurrentRate;
+            state.yaw = (steeringAggressiveness * (float)vessel.angularVelocityD.z) / TimeWarp.CurrentRate;
+            state.roll = (steeringAggressiveness * (float)vessel.angularVelocityD.y) / TimeWarp.CurrentRate;
         }
         void steeringRollManeuver(FlightCtrlState state)
         {
@@ -126,6 +170,44 @@ namespace BenjisHardwiredLogic
             state.pitch = 0;
             state.yaw = 0;
             state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 20d), 0.05);
+
+            ScreenMessages.PostScreenMessage("rollAngle: " + state.roll, 1f, ScreenMessageStyle.UPPER_CENTER);
+        }
+        void steeringGravityTurn(FlightCtrlState state)
+        {
+
+            double x = vessel.orbit.altitude / 1000.0d;
+
+            if (vessel.orbit.altitude <= 10075)
+                desiredPitch = (0.014013 * (x * x * x)) - (0.448716 * (x * x)) + (5.730697 * x) + 0.32134;
+            else if (vessel.orbit.altitude > 10075 && vessel.orbit.altitude < 97800)
+                desiredPitch = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
+            else
+                desiredPitch = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
+
+
+
+            //tMinus1Pitch = tZeroPitch;
+            tMinus1Yaw = tZeroYaw;
+
+            orbitalPrograde = vessel.obt_velocity.normalized;
+            orbitalRadial = (vessel.CoMD - vessel.mainBody.position).normalized;
+            orbitalNormal = orbitalFrame * Vector3d.left;
+
+            Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
+            Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
+            Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
+
+
+            //tZeroPitch = HelperFunctions.degAngle(orbitalNormal, shipForward);
+
+            tZeroYaw = HelperFunctions.degAngle(orbitalRadial, shipForward);
+
+            deltaYaw = tZeroYaw - tMinus1Yaw;
+
+            state.pitch = 0;// (float)HelperFunctions.inRange(9 * deltaPitch, -0.2, 0.2);
+            state.yaw = (float)HelperFunctions.inRange(9 * deltaYaw, -0.2, 0.2);
+            state.roll = 0;
         }
         void steeringLeveledFlight(FlightCtrlState state)
         {
@@ -136,9 +218,9 @@ namespace BenjisHardwiredLogic
 
         #endregion
 
-            #region Overrides
+        #region Overrides
 
-            //This happens once in both EDITOR and FLIGHT
+        //This happens once in both EDITOR and FLIGHT
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
@@ -157,12 +239,8 @@ namespace BenjisHardwiredLogic
             if (activeCoroutine == 1)
                 StartCoroutine(coroutineRollManeuver());
             else if (activeCoroutine == 2)
-                StartCoroutine(coroutinePitchCurveNr1());
+                StartCoroutine(coroutinePitchCurve());
             else if (activeCoroutine == 3)
-                StartCoroutine(coroutinePitchCurveNr2());
-            else if (activeCoroutine == 4)
-                StartCoroutine(coroutinePitchCurveNr3());
-            else if (activeCoroutine == 5)
                 StartCoroutine(coroutineLeveledFlight());
 
             if (eventMessagingWanted)
@@ -285,10 +363,11 @@ namespace BenjisHardwiredLogic
                 headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
             }
 
-
             vessel.OnFlyByWire += steeringStraightUp;
+            //vessel.OnFlyByWire += steeringRollManeuver;
+            //vessel.OnFlyByWire += steeringGravityTurn;
 
-            StartCoroutine(coroutineRollManeuver());
+            StartCoroutine(coroutinePitchCurve());
         }
 
         //The roll maneuver rolls the rockets bottom to the horizon
@@ -304,7 +383,7 @@ namespace BenjisHardwiredLogic
                     vessel.OnFlyByWire -= steeringStraightUp;
                     vessel.OnFlyByWire += steeringRollManeuver;
 
-                    StartCoroutine(coroutinePitchCurveNr1());
+                    StartCoroutine(coroutinePitchCurve());
                     StopCoroutine(coroutineRollManeuver());
                     yield break;
                 }
@@ -314,87 +393,40 @@ namespace BenjisHardwiredLogic
         }
 
         //Calculate and follow the first segment of the gravity turn
-        IEnumerator coroutinePitchCurveNr1()
+        IEnumerator coroutinePitchCurve()
         {
             activeCoroutine = 2;
             for (; ; )
             {
-                vessel.OnFlyByWire -= steeringRollManeuver;
 
                 double x = vessel.orbit.altitude / 1000.0d;
-                desiredPitch = (0.014013 * (x*x*x)) - (0.448716 * (x*x)) + (5.730697 * x) + 0.32134;
 
-                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
-                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
+                if (vessel.orbit.altitude <= 10075)
+                    desiredPitch = (0.014013 * (x * x * x)) - (0.448716 * (x * x)) + (5.730697 * x) + 0.32134;
+                else if (vessel.orbit.altitude > 10075 && vessel.orbit.altitude < 97800)
+                    desiredPitch = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
+                else
+                    desiredPitch = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
 
-                ScreenMessages.PostScreenMessage("1) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("1) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("1) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
+                 
+                
+                //angularvelocity:
+                //x : -pitch
+                //y : -roll
+                //z : -yaw
+                ScreenMessages.PostScreenMessage("x : " + Math.Round(vessel.angularVelocityD.x, 3) + " ... " + Math.Round(sumOfAngularPitch, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("y : " + Math.Round(vessel.angularVelocityD.y, 3) + " ... " + Math.Round(sumOfAngularRoll, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("z : " + Math.Round(vessel.angularVelocityD.z, 3) + " ... " + Math.Round(sumOfAngularYaw, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
 
-                if (vessel.orbit.altitude > 10075)
-                {
-                    StartCoroutine(coroutinePitchCurveNr2());
-                    StopCoroutine(coroutinePitchCurveNr1());
-                    yield break;
-                }
-
-                //yield return new WaitForSeconds(.1f);
-                yield return new WaitForSeconds(1.1f);
-            }
-        }
-
-        //Calculate and follow the second segment of the gravity turn
-        IEnumerator coroutinePitchCurveNr2()
-        {
-            activeCoroutine = 3;
-            for (; ; )
-            {
-                double x = vessel.orbit.altitude / 1000.0d;
-                desiredPitch = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
-
-                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
-                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
-
-                ScreenMessages.PostScreenMessage("2) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("2) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("2) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
-
-                if (vessel.orbit.altitude > 97800)
-                {
-                    StartCoroutine(coroutinePitchCurveNr3());
-                    StopCoroutine(coroutinePitchCurveNr2());
-                    yield break;
-                }
-
-                //yield return new WaitForSeconds(.1f);
-                yield return new WaitForSeconds(1.1f);
-            }
-        }
-
-        //Calculate and follow the third segment of the gravity turn
-        IEnumerator coroutinePitchCurveNr3()
-        {
-            activeCoroutine = 4;
-            for (; ; )
-            {
-                double x = vessel.orbit.altitude / 1000.0d;
-                desiredPitch = -(0.000889 * (x*x)) + (0.456161 * x) + 31.754229;
-
-                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
-                double actualPitch = HelperFunctions.degAngle(orbitalRadial, shipForward);
-
-                ScreenMessages.PostScreenMessage("3) altitude:   " + x, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("3) Calc Pitch: " + desiredPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("3) Act Pitch:  " + actualPitch, 1f, ScreenMessageStyle.UPPER_CENTER);
-
-                if (vessel.orbit.altitude > 240000)
+                /*
+                if (vessel.orbit.altitude > 216309)
                 {
                     StartCoroutine(coroutineLeveledFlight());
-                    StopCoroutine(coroutinePitchCurveNr3());
+                    StopCoroutine(coroutinePitchCurve());
                     yield break;
                 }
 
-                //yield return new WaitForSeconds(.1f);
+                //yield return new WaitForSeconds(.1f);*/
                 yield return new WaitForSeconds(1.1f);
             }
         }
@@ -402,13 +434,14 @@ namespace BenjisHardwiredLogic
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         IEnumerator coroutineLeveledFlight()
         {
-            activeCoroutine = 5;
+            activeCoroutine = 3;
             for (; ; )
             {
 
+                vessel.OnFlyByWire -= steeringGravityTurn;
                 vessel.OnFlyByWire += steeringLeveledFlight;
 
-                if (vessel.orbit.altitude > 216309)
+                if (vessel.orbit.altitude > 10000000)
                 {
                     endMod();
                     StopCoroutine(coroutineLeveledFlight());
@@ -468,9 +501,7 @@ namespace BenjisHardwiredLogic
         {
             //Stopping all the coroutines that might be running
             StopCoroutine(coroutineRollManeuver());
-            StopCoroutine(coroutinePitchCurveNr1());
-            StopCoroutine(coroutinePitchCurveNr2());
-            StopCoroutine(coroutinePitchCurveNr3());
+            StopCoroutine(coroutinePitchCurve());
             StopCoroutine(coroutineLeveledFlight());
             StopCoroutine(coroutinePrintMessage());
         }
