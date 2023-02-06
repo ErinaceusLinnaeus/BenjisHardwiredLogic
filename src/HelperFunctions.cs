@@ -53,6 +53,20 @@ namespace BenjisHardwiredLogic
             else
                 return one;
         }
+        public static bool changeOfSign(double one, double two)
+        {
+            if ((one < 0 && two > 0) || (one > 0 && two < 0))
+                return true;
+            else
+                return false;
+        }
+        public static bool changeOfSign(float one, float two)
+        {
+            if ((one < 0 && two > 0) || (one > 0 && two < 0))
+                return true;
+            else
+                return false;
+        }
         #endregion
     }
 }

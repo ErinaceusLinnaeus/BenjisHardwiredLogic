@@ -63,6 +63,34 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private double sumOfAngularRoll = 0;
 
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularPitchLast = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularYawLast = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double sumOfAngularRollLast = 0;
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float statePitchLast = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float stateYawLast = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float stateRollLast = 0;
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float statePitchNow = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float stateYawNow = 0;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private float stateRollNow = 0;
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double easePitch = 1;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double easeYaw = 1;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double easeRoll = 1;
+
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
         private int activeCoroutine = 0;
@@ -154,12 +182,77 @@ namespace BenjisHardwiredLogic
 
             */
 
+            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
+                easePitch = 0.2;
+            else
+                easePitch = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
+                easeYaw = 0.2;
+            else
+                easeYaw = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
+                easeRoll = 0.2;
+            else
+                easeRoll = 1;
+
+            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
+                easePitch = 0.2;
+            else
+                easePitch = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
+                easeYaw = 0.2;
+            else
+                easeYaw = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
+                easeRoll = 0.2;
+            else
+                easeRoll = 1;
+
 
             float steeringAggressiveness = 51f;
 
-            state.pitch = (steeringAggressiveness * (float)vessel.angularVelocityD.x) / TimeWarp.CurrentRate;
-            state.yaw = (steeringAggressiveness * (float)vessel.angularVelocityD.z) / TimeWarp.CurrentRate;
-            state.roll = (steeringAggressiveness * (float)vessel.angularVelocityD.y) / TimeWarp.CurrentRate;
+
+
+            statePitchNow = (float)easePitch * steeringAggressiveness * (float)vessel.angularVelocityD.x / TimeWarp.CurrentRate;
+            stateYawNow = (float)easeYaw * steeringAggressiveness * (float)vessel.angularVelocityD.z / TimeWarp.CurrentRate;
+            stateRollNow = (float)easeRoll * steeringAggressiveness * (float)vessel.angularVelocityD.y / TimeWarp.CurrentRate;
+
+            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
+                easePitch = 0.2;
+            else
+                easePitch = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
+                easeYaw = 0.2;
+            else
+                easeYaw = 1;
+            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
+                easeRoll = 0.2;
+            else
+                easeRoll = 1;
+
+
+
+            if (HelperFunctions.changeOfSign(statePitchNow, statePitchLast))
+                state.pitch = (statePitchNow + statePitchLast) / TimeWarp.CurrentRate;
+            else
+                state.pitch = (float)easePitch * steeringAggressiveness * (float)vessel.angularVelocityD.x / TimeWarp.CurrentRate;
+            if (HelperFunctions.changeOfSign(stateYawNow, stateYawLast))
+                state.pitch = (stateYawNow + stateYawLast) / TimeWarp.CurrentRate;
+            else
+                state.yaw = (float)easeYaw * steeringAggressiveness * (float)vessel.angularVelocityD.z / TimeWarp.CurrentRate;
+            if (HelperFunctions.changeOfSign(stateRollNow, stateRollLast))
+                state.pitch = (stateRollNow + stateRollLast) / TimeWarp.CurrentRate;
+            else
+                state.roll = (float)easeRoll * steeringAggressiveness * (float)vessel.angularVelocityD.y / TimeWarp.CurrentRate;
+
+            statePitchLast = statePitchNow;
+            stateYawLast = stateYawNow;
+            stateRollLast = stateRollNow;
+
+            sumOfAngularPitchLast = sumOfAngularPitch;
+            sumOfAngularYawLast = sumOfAngularYaw;
+            sumOfAngularRollLast = sumOfAngularRoll;
+
         }
         void steeringRollManeuver(FlightCtrlState state)
         {
@@ -417,6 +510,23 @@ namespace BenjisHardwiredLogic
                 ScreenMessages.PostScreenMessage("x : " + Math.Round(vessel.angularVelocityD.x, 3) + " ... " + Math.Round(sumOfAngularPitch, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
                 ScreenMessages.PostScreenMessage("y : " + Math.Round(vessel.angularVelocityD.y, 3) + " ... " + Math.Round(sumOfAngularRoll, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
                 ScreenMessages.PostScreenMessage("z : " + Math.Round(vessel.angularVelocityD.z, 3) + " ... " + Math.Round(sumOfAngularYaw, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
+
+                /*
+                Vector3 pos = Vector3.up;
+                Vector3 neg = Vector3.up;
+                part.FindModuleImplementing<ModuleGimbal>().GetPotentialTorque(out pos, out neg);
+
+                if (pos == null)
+                    ScreenMessages.PostScreenMessage("pos null", 1f, ScreenMessageStyle.UPPER_CENTER);
+                if (neg == null)
+                    ScreenMessages.PostScreenMessage("neg null", 1f, ScreenMessageStyle.UPPER_CENTER);
+
+                if (pos != null && neg != null)
+                {
+                    ScreenMessages.PostScreenMessage("pos: " + pos.x, 1f, ScreenMessageStyle.UPPER_CENTER);
+                    ScreenMessages.PostScreenMessage("neg: " + neg.x, 1f, ScreenMessageStyle.UPPER_CENTER);
+                }
+                */
 
                 /*
                 if (vessel.orbit.altitude > 216309)
