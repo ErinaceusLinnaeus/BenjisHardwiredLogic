@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ProceduralSpaceObject;
+using UnityEngine.SceneManagement;
 using static Targeting;
 
 namespace BenjisHardwiredLogic
@@ -44,12 +46,6 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private double desiredPitch = 0;
         [KSPField(isPersistant = true, guiActive = false)]
-        private double tMinus1Pitch = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double tZeroPitch = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double deltaPitch = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
         private double tMinus1Yaw = 0;
         [KSPField(isPersistant = true, guiActive = false)]
         private double tZeroYaw = 0;
@@ -64,32 +60,7 @@ namespace BenjisHardwiredLogic
         private double sumOfAngularRoll = 0;
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularPitchLast = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularYawLast = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularRollLast = 0;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float statePitchLast = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float stateYawLast = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float stateRollLast = 0;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float statePitchNow = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float stateYawNow = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private float stateRollNow = 0;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double easePitch = 1;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double easeYaw = 1;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double easeRoll = 1;
+        private Vector3d steeringAggressiveness = new Vector3d(101,101,31);
 
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
@@ -181,77 +152,15 @@ namespace BenjisHardwiredLogic
             state.roll = steeringAggressiveness * (float)sumOfAngularRoll;
 
             */
+            /*
+            steeringAggressiveness.x = 51f;
+            steeringAggressiveness.z= 51f;
+            steeringAggressiveness.y = 21f;
+            */
 
-            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
-                easePitch = 0.2;
-            else
-                easePitch = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
-                easeYaw = 0.2;
-            else
-                easeYaw = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
-                easeRoll = 0.2;
-            else
-                easeRoll = 1;
-
-            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
-                easePitch = 0.2;
-            else
-                easePitch = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
-                easeYaw = 0.2;
-            else
-                easeYaw = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
-                easeRoll = 0.2;
-            else
-                easeRoll = 1;
-
-
-            float steeringAggressiveness = 51f;
-
-
-
-            statePitchNow = (float)easePitch * steeringAggressiveness * (float)vessel.angularVelocityD.x / TimeWarp.CurrentRate;
-            stateYawNow = (float)easeYaw * steeringAggressiveness * (float)vessel.angularVelocityD.z / TimeWarp.CurrentRate;
-            stateRollNow = (float)easeRoll * steeringAggressiveness * (float)vessel.angularVelocityD.y / TimeWarp.CurrentRate;
-
-            if (HelperFunctions.changeOfSign(sumOfAngularPitch, sumOfAngularPitchLast))
-                easePitch = 0.2;
-            else
-                easePitch = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularYaw, sumOfAngularYawLast))
-                easeYaw = 0.2;
-            else
-                easeYaw = 1;
-            if (HelperFunctions.changeOfSign(sumOfAngularRoll, sumOfAngularRollLast))
-                easeRoll = 0.2;
-            else
-                easeRoll = 1;
-
-
-
-            if (HelperFunctions.changeOfSign(statePitchNow, statePitchLast))
-                state.pitch = (statePitchNow + statePitchLast) / TimeWarp.CurrentRate;
-            else
-                state.pitch = (float)easePitch * steeringAggressiveness * (float)vessel.angularVelocityD.x / TimeWarp.CurrentRate;
-            if (HelperFunctions.changeOfSign(stateYawNow, stateYawLast))
-                state.pitch = (stateYawNow + stateYawLast) / TimeWarp.CurrentRate;
-            else
-                state.yaw = (float)easeYaw * steeringAggressiveness * (float)vessel.angularVelocityD.z / TimeWarp.CurrentRate;
-            if (HelperFunctions.changeOfSign(stateRollNow, stateRollLast))
-                state.pitch = (stateRollNow + stateRollLast) / TimeWarp.CurrentRate;
-            else
-                state.roll = (float)easeRoll * steeringAggressiveness * (float)vessel.angularVelocityD.y / TimeWarp.CurrentRate;
-
-            statePitchLast = statePitchNow;
-            stateYawLast = stateYawNow;
-            stateRollLast = stateRollNow;
-
-            sumOfAngularPitchLast = sumOfAngularPitch;
-            sumOfAngularYawLast = sumOfAngularYaw;
-            sumOfAngularRollLast = sumOfAngularRoll;
+            state.pitch =(float)(steeringAggressiveness.x * vessel.angularVelocityD.x) / TimeWarp.CurrentRate;
+            state.yaw = (float)(steeringAggressiveness.z * vessel.angularVelocityD.z) / TimeWarp.CurrentRate;
+            state.roll = (float)(steeringAggressiveness.y * vessel.angularVelocityD.y) / TimeWarp.CurrentRate;
 
         }
         void steeringRollManeuver(FlightCtrlState state)
