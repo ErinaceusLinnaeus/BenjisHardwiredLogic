@@ -98,6 +98,19 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d orbitalNormal;
 
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        double launchSiteLat;
+        [KSPField(isPersistant = true, guiActive = false)]
+        double launchSiteLong;
+        [KSPField(isPersistant = true, guiActive = false)]
+        double downrangeDistance;
+
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d markVector;
+        [KSPField(isPersistant = true, guiActive = false)]
+        double bodysCircumference;
+
         //The PAW fields in the editor
         //A button to enable or disable the module
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
@@ -162,9 +175,16 @@ namespace BenjisHardwiredLogic
             sumOfAngularYaw += vessel.angularVelocityD.z;
             sumOfAngularRoll += vessel.angularVelocityD.y;
 
-            ScreenMessages.PostScreenMessage("sumOfAngularPitch - desiredPitch: " + (sumOfAngularPitch - desiredPitch), .1f, ScreenMessageStyle.UPPER_RIGHT);
+            Vector3d flightDirection;
 
-            if (sumOfAngularPitch < desiredPitch)
+            if (vessel.orbit.altitude < 45000)
+                flightDirection = vessel.srf_velocity;
+            else
+                flightDirection = vessel.obt_velocity;
+
+
+            if (HelperFunctions.degAngle(orbitalRadial, flightDirection) < desiredPitch)
+            //if (sumOfAngularPitch < desiredPitch)
             {
                 //state.pitch = (float)HelperFunctions.limitAbs(((sumOfAngularPitch - desiredPitch) / 2d), 0.5);
                 state.pitch = - 0.1f;
@@ -183,6 +203,7 @@ namespace BenjisHardwiredLogic
             state.pitch = 0;
             state.yaw = 0;
             state.roll = 0;
+
         }
 
         #endregion
@@ -297,6 +318,12 @@ namespace BenjisHardwiredLogic
             orbitalFrame = UnityEngine.QuaternionD.LookRotation(orbitalPrograde, orbitalRadial);
             orbitalNormal = orbitalFrame * Vector3d.left;
 
+            launchSiteLat = vessel.latitude;
+            launchSiteLong = vessel.longitude;
+
+            markVector = FlightGlobals.Bodies[1].GetSurfaceNVector(launchSiteLat, launchSiteLong);
+            bodysCircumference = 2 * Math.PI * FlightGlobals.Bodies[1].Radius;
+
             if (desiredInclination < vessel.latitude)
                 azimuth = vessel.latitude;
             else
@@ -405,7 +432,8 @@ namespace BenjisHardwiredLogic
         {
             for (; ; )
             {
-
+                //Calculating the desired pitch to follow
+                //The gravity curve is made up of three different functions to keep things "simple"
                 double x = vessel.orbit.altitude / 1000.0d;
 
                 if (vessel.orbit.altitude <= 10075)
@@ -416,8 +444,25 @@ namespace BenjisHardwiredLogic
                     desiredPitch = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
 
                 ScreenMessages.PostScreenMessage("desired pitch: " + desiredPitch, 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("actual pitch: " + sumOfAngularPitch, 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                //ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
 
+                //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
+                Vector3d vesselVector = vessel.CoM - FlightGlobals.Bodies[1].transform.position;
+                downrangeDistance = (FlightGlobals.Bodies[1].Radius * HelperFunctions.radAngle(markVector, vesselVector));
 
+                double angleCorrection = ((downrangeDistance / bodysCircumference) * 360);
+
+                //Add it up
+                desiredPitch = desiredPitch + angleCorrection;
+
+                //ScreenMessages.PostScreenMessage("downrange: " + downrangeDistance, 0.4f, ScreenMessageStyle.UPPER_RIGHT);
+                //ScreenMessages.PostScreenMessage("AngleCorrection: " + ((downrangeDistance / umfang) * 360), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
+
+                //downrangeDistance = 12742 * arcsin(sqrt(sin²((θ₂ -θ₁)/ 2) +cosθ₁ × cosθ₂ × sin²((φ₂ -φ₁)/ 2)));
+
+                /*
                 //tMinus1Pitch = tZeroPitch;
                 tMinus1Yaw = tZeroYaw;
 
@@ -435,6 +480,7 @@ namespace BenjisHardwiredLogic
                 tZeroYaw = HelperFunctions.degAngle(orbitalRadial, shipForward);
 
                 deltaYaw = tZeroYaw - tMinus1Yaw;
+                */
 
                 /*
                 if (vessel.orbit.altitude < 10000000)
