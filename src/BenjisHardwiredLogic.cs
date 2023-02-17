@@ -111,20 +111,28 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         double bodysCircumference;
 
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d shipLeft;
+
         //The PAW fields in the editor
         //A button to enable or disable the module
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
         //Specify the inclination you wanna end up at
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Inclination [°]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
-            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 359.9f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Inclination [°]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 90.0f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float desiredInclination = 0;
+        //Set the orbit pro- or retrograde
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Orbital Direction", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_ChooseOption(options = new string[2] { "Prograde", "Retrograde" })]
+        private string desiredOrbitalDirection = "Prograde";
+        /*
         //Specify if we should follow the azimuth to the north or the south
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Launchdirection", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_ChooseOption(options = new string[4] { "SE", "NE", "NW", "SW" })]
         private string desiredDirectionToLaunch = "SE";
-
+        */
         //The PAW fields in Flight
         //Shows if the decoupler is active
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
@@ -158,15 +166,15 @@ namespace BenjisHardwiredLogic
         void steeringRollManeuver(FlightCtrlState state)
         {
 
+
             //Ship's pointing that way
-            Vector3d shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
+            //Vector3d shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
             double rollAngle = HelperFunctions.degAngle(shipLeft, orbitalRadial);
 
             //state.pitch = 0;
             //state.yaw = 0;
-            //state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 20d), 0.05);
+            state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 2d), 1.0);
 
-            //ScreenMessages.PostScreenMessage("rollAngle: " + state.roll, 1f, ScreenMessageStyle.UPPER_CENTER);
         }
         void steeringGravityTurn(FlightCtrlState state)
         {
@@ -282,7 +290,7 @@ namespace BenjisHardwiredLogic
             if (modInUse)
             {
                 Fields[nameof(desiredInclination)].guiActiveEditor = true;
-                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = true;
+                //Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
@@ -292,7 +300,7 @@ namespace BenjisHardwiredLogic
                     negChangeHappened = true;
 
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
-                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
+                //Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
@@ -324,40 +332,65 @@ namespace BenjisHardwiredLogic
             markVector = FlightGlobals.Bodies[1].GetSurfaceNVector(launchSiteLat, launchSiteLong);
             bodysCircumference = 2 * Math.PI * FlightGlobals.Bodies[1].Radius;
 
-            if (desiredInclination < vessel.latitude)
-                azimuth = vessel.latitude;
+            if (desiredInclination <= Math.Abs(launchSiteLat))
+                azimuth = Math.Abs(launchSiteLat);
             else
-                azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(vessel.latitude)))));
+                azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
-            //Rotate the ships coordinates, so we match the desired launch direction and get the correct pitch and yaw settings
-            if (desiredDirectionToLaunch == "SE")
+            if (launchSiteLat < 0)
             {
-                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
-                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
-                headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+                if (desiredOrbitalDirection == "Prograde")
+                    azimuth = 360 - azimuth;
+                else
+                    azimuth = 180 + azimuth;
             }
-            else if (desiredDirectionToLaunch == "NE")
+            else
             {
-                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
-                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
-                headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+                if (desiredOrbitalDirection == "Retrograde")
+                    azimuth = 180 - azimuth;
             }
-            else if (desiredDirectionToLaunch == "NW")
+
+
+
+                //Rotate the ships coordinates, so we match the desired launch direction and get the correct pitch and yaw settings
+                //if (desiredDirectionToLaunch == "SE")
+                if (HelperFunctions.isInRangeOf(desiredInclination, 270, 359.9))
             {
-                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
-                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
-                headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
+                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
+                //headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                //headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
             }
-            else if (desiredDirectionToLaunch == "SW")
+            //else if (desiredDirectionToLaunch == "NE")
+            else if (HelperFunctions.isInRangeOf(desiredInclination, 0, 90))
             {
-                Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
-                Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
-                headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
+                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
+                //headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                //headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
             }
+            //else if (desiredDirectionToLaunch == "NW")
+            else if (HelperFunctions.isInRangeOf(desiredInclination, 91.1, 180))
+            {
+                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
+                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
+                //headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                //headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+            //else if (desiredDirectionToLaunch == "SW")
+            else if (HelperFunctions.isInRangeOf(desiredInclination, 180.1, 269.9))
+            {
+                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
+                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
+                //headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
+                //headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
+            }
+
+            double rollAngle = HelperFunctions.degAngle(shipLeft, orbitalPrograde);
+            ScreenMessages.PostScreenMessage("desInc: " + desiredInclination, 10f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage("shipLat: " + vessel.latitude, 10f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage("siteLat: " + launchSiteLat, 10f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage("azimuth: " + azimuth, 10f, ScreenMessageStyle.UPPER_CENTER);
 
             vessel.OnFlyByWire += steeringStraightUp;
 
@@ -372,7 +405,7 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 1;
             for (; ; )
             {
-                if (vessel.verticalSpeed >= 15)
+                if (vessel.verticalSpeed >= 10)
                 {
                     vessel.OnFlyByWire += steeringRollManeuver;
 
@@ -460,36 +493,6 @@ namespace BenjisHardwiredLogic
                 //ScreenMessages.PostScreenMessage("downrange: " + downrangeDistance, 0.4f, ScreenMessageStyle.UPPER_RIGHT);
                 //ScreenMessages.PostScreenMessage("AngleCorrection: " + ((downrangeDistance / umfang) * 360), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
 
-                //downrangeDistance = 12742 * arcsin(sqrt(sin²((θ₂ -θ₁)/ 2) +cosθ₁ × cosθ₂ × sin²((φ₂ -φ₁)/ 2)));
-
-                /*
-                //tMinus1Pitch = tZeroPitch;
-                tMinus1Yaw = tZeroYaw;
-
-                //orbitalPrograde = vessel.obt_velocity.normalized;
-                orbitalRadial = (vessel.CoMD - vessel.mainBody.position).normalized;
-                //orbitalNormal = orbitalFrame * Vector3d.left;
-
-                Vector3d shipForward = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.forward;
-                //Vector3d shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
-                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
-
-
-                //tZeroPitch = HelperFunctions.degAngle(orbitalNormal, shipForward);
-
-                tZeroYaw = HelperFunctions.degAngle(orbitalRadial, shipForward);
-
-                deltaYaw = tZeroYaw - tMinus1Yaw;
-                */
-
-                /*
-                if (vessel.orbit.altitude < 10000000)
-                {
-                    endMod();
-                    StopCoroutine(coroutineCalculateGravityTurn());
-                    yield break;
-                }
-                */
                 yield return new WaitForSeconds(.5f);
             }
         }
@@ -539,7 +542,7 @@ namespace BenjisHardwiredLogic
                 PAWmodInUse = StringDisconnected;
 
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
-                Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
+                //Fields[nameof(desiredDirectionToLaunch)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
 
                 //Update the size of the PAW

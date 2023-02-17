@@ -67,6 +67,20 @@ namespace BenjisHardwiredLogic
             else
                 return false;
         }
+        public static bool isInRangeOf(double one, double lowerLimit, double upperLimit)
+        {
+            if (one >= lowerLimit && one <= upperLimit)
+                return true;
+            else
+                return false;
+        }
+        public static bool isInBetween(double one, double lowerLimit, double upperLimit)
+        {
+            if (one > lowerLimit && one < upperLimit)
+                return true;
+            else
+                return false;
+        }
         #endregion
     }
 }
