@@ -2,9 +2,6 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
-using static ProceduralSpaceObject;
-using UnityEngine.SceneManagement;
-using static Targeting;
 
 namespace BenjisHardwiredLogic
 {
@@ -130,6 +127,8 @@ namespace BenjisHardwiredLogic
         Vector3d atmoDrag = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d lastTicksAngularVelocity = new Vector3d(0, 0, 0);
 
         //The PAW fields in the editor
         //A button to enable or disable the module
@@ -169,9 +168,8 @@ namespace BenjisHardwiredLogic
         #region steering delegates
         void steeringMeasurements(FlightCtrlState state)
         {
-            sumOfAngulars.x += vessel.angularVelocityD.x; //pitch
-            sumOfAngulars.y += vessel.angularVelocityD.y; //roll
-            sumOfAngulars.z += vessel.angularVelocityD.z; // yaw
+
+            sumOfAngulars += vessel.angularVelocityD;
 
             if (sumOfAngulars.x > 360)
                 sumOfAngulars.x += -360;
@@ -189,48 +187,35 @@ namespace BenjisHardwiredLogic
                 sumOfAngulars.z += 360;
 
 
-            if (Math.Abs(lastTicksSteering.x) <= 0.0008)
-            {
-                if (vessel.angularVelocityD.x != 0)
-                    atmoDrag.x = (atmoDrag.x + Math.Abs(vessel.angularVelocityD.x)) / 2;
-            }
+            if (Math.Abs(lastTicksSteering.x) > 0.01)
+                steerDrag.x = (steerDrag.x + Math.Abs(lastTicksSteering.x / (lastTicksAngularVelocity.x - vessel.angularVelocityD.x))) / 2;
             else
-                steerDrag.x = (steerDrag.x + (lastTicksSteering.x / vessel.angularVelocityD.x)) / 2;
-
-            if (Math.Abs(lastTicksSteering.y) <= 0.0008)
-            {
-                if (vessel.angularVelocityD.y != 0)
-                    atmoDrag.y = (atmoDrag.y + Math.Abs(vessel.angularVelocityD.y)) / 2;
-            }
+                atmoDrag.x = (atmoDrag.x + Math.Abs(lastTicksAngularVelocity.x - vessel.angularVelocityD.x)) / 2;
+            if (Math.Abs(lastTicksSteering.y) > 0.01)
+                steerDrag.y = (steerDrag.y + Math.Abs(lastTicksSteering.y / (lastTicksAngularVelocity.y - vessel.angularVelocityD.y))) / 2;
             else
-                steerDrag.y = (steerDrag.y + (lastTicksSteering.y / vessel.angularVelocityD.y)) / 2;
-
-            if (Math.Abs(lastTicksSteering.z) <= 0.0008)
-            {
-                if (vessel.angularVelocityD.z != 0)
-                    atmoDrag.z = (atmoDrag.z + Math.Abs(vessel.angularVelocityD.z)) / 2;
-            }
+                atmoDrag.y = (atmoDrag.y + Math.Abs(lastTicksAngularVelocity.y - vessel.angularVelocityD.y)) / 2;
+            if (Math.Abs(lastTicksSteering.z) > 0.01)
+                steerDrag.z = (steerDrag.z + Math.Abs(lastTicksSteering.z / (lastTicksAngularVelocity.z - vessel.angularVelocityD.z))) / 2;
             else
-                steerDrag.z = (steerDrag.z + (lastTicksSteering.z / vessel.angularVelocityD.z)) / 2;
-
-
-            ScreenMessages.PostScreenMessage("lastTicksSteering: " + lastTicksSteering, 0.05f, ScreenMessageStyle.UPPER_CENTER);
-
+                atmoDrag.z = (atmoDrag.z + Math.Abs(lastTicksAngularVelocity.z - vessel.angularVelocityD.z)) / 2;
+            /*
             ScreenMessages.PostScreenMessage("atmoDrag: " + atmoDrag, 0.05f, ScreenMessageStyle.UPPER_RIGHT);
             ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag, 0.05f, ScreenMessageStyle.UPPER_LEFT);
+            */
 
+            lastTicksAngularVelocity = vessel.angularVelocityD;
+
+            lastTicksSteering.x = state.pitch;
+            lastTicksSteering.y = state.roll;
+            lastTicksSteering.z = state.yaw;
 
         }
         void steeringStraightUp(FlightCtrlState state)
         {
-
-            lastTicksSteering.x = (steeringAggressiveness.x * (vessel.angularVelocityD.x + sumOfAngulars.x)) / TimeWarp.CurrentRate;
-            lastTicksSteering.y = (steeringAggressiveness.y * (vessel.angularVelocityD.y + sumOfAngulars.y)) / TimeWarp.CurrentRate;
-            lastTicksSteering.z = (steeringAggressiveness.z * (vessel.angularVelocityD.z + sumOfAngulars.z)) / TimeWarp.CurrentRate;
-
-            state.pitch = (float)lastTicksSteering.x;
-            state.roll = (float)lastTicksSteering.y;
-            state.yaw = (float)lastTicksSteering.z;
+            //state.pitch = (float)lastTicksSteering.x;
+            //state.roll = (float)lastTicksSteering.y;
+            //state.yaw = (float)lastTicksSteering.z;
 
         }
         void steeringRollManeuver(FlightCtrlState state)
@@ -301,7 +286,7 @@ namespace BenjisHardwiredLogic
             //if (sumOfAngularPitch < desiredPitch)
             {
                 //state.pitch = (float)HelperFunctions.limitAbs(((sumOfAngularPitch - desiredPitch) / 2d), 0.5);
-                state.pitch = - 0.1f;
+                state.pitch = -0.1f;
             }
             else
             {
@@ -544,9 +529,9 @@ namespace BenjisHardwiredLogic
             for (; ; )
             {
                 //if (vessel.verticalSpeed >= 100)
-                   
+
                 if (vessel.verticalSpeed >= 10000)
-                    {
+                {
                     vessel.OnFlyByWire -= steeringStraightUp;
                     vessel.OnFlyByWire += steeringGravityTurn;
 
@@ -555,7 +540,7 @@ namespace BenjisHardwiredLogic
                     StopCoroutine(coroutineWaitForGravTurn());
                     yield break;
                 }
-                
+
                 yield return new WaitForSeconds(.1f);
             }
         }
@@ -566,7 +551,7 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 3;
             for (; ; )
             {
-                
+
                 if (vessel.orbit.altitude > 10000000)
                 {
                     vessel.OnFlyByWire -= steeringGravityTurn;
