@@ -121,10 +121,15 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         double directionToRoll;
 
+
         [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d steerDrag = new Vector3d(0, 0, 0);
+        Vector3d[] steerDrag = new Vector3d[128];
         [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d atmoDrag = new Vector3d(0, 0, 0);
+        int steerDragPos = 1;
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d[] atmoDrag = new Vector3d[128];
+        [KSPField(isPersistant = true, guiActive = false)]
+        int atmoDragPos = 1;
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
@@ -187,22 +192,29 @@ namespace BenjisHardwiredLogic
                 sumOfAngulars.z += 360;
 
 
-            if (Math.Abs(lastTicksSteering.x) > 0.01)
-                steerDrag.x = (steerDrag.x + Math.Abs(lastTicksSteering.x / (lastTicksAngularVelocity.x - vessel.angularVelocityD.x))) / 2;
+            if (Math.Abs(lastTicksSteering.x) > 0.001)
+                steerDrag[steerDragPos].x = (steerDrag[steerDragPos].x + Math.Abs(lastTicksSteering.x / (lastTicksAngularVelocity.x - vessel.angularVelocityD.x))) / 2;
             else
-                atmoDrag.x = (atmoDrag.x + Math.Abs(lastTicksAngularVelocity.x - vessel.angularVelocityD.x)) / 2;
-            if (Math.Abs(lastTicksSteering.y) > 0.01)
-                steerDrag.y = (steerDrag.y + Math.Abs(lastTicksSteering.y / (lastTicksAngularVelocity.y - vessel.angularVelocityD.y))) / 2;
+                atmoDrag[atmoDragPos].x = (atmoDrag[atmoDragPos].x + Math.Abs(lastTicksAngularVelocity.x - vessel.angularVelocityD.x)) / 2;
+            if (Math.Abs(lastTicksSteering.y) > 0.001)
+                steerDrag[steerDragPos].y = (steerDrag[steerDragPos].y + Math.Abs(lastTicksSteering.y / (lastTicksAngularVelocity.y - vessel.angularVelocityD.y))) / 2;
             else
-                atmoDrag.y = (atmoDrag.y + Math.Abs(lastTicksAngularVelocity.y - vessel.angularVelocityD.y)) / 2;
-            if (Math.Abs(lastTicksSteering.z) > 0.01)
-                steerDrag.z = (steerDrag.z + Math.Abs(lastTicksSteering.z / (lastTicksAngularVelocity.z - vessel.angularVelocityD.z))) / 2;
+                atmoDrag[atmoDragPos].y = (atmoDrag[atmoDragPos].y + Math.Abs(lastTicksAngularVelocity.y - vessel.angularVelocityD.y)) / 2;
+            if (Math.Abs(lastTicksSteering.z) > 0.001)
+                steerDrag[steerDragPos].z = (steerDrag[steerDragPos].z + Math.Abs(lastTicksSteering.z / (lastTicksAngularVelocity.z - vessel.angularVelocityD.z))) / 2;
             else
-                atmoDrag.z = (atmoDrag.z + Math.Abs(lastTicksAngularVelocity.z - vessel.angularVelocityD.z)) / 2;
-            /*
-            ScreenMessages.PostScreenMessage("atmoDrag: " + atmoDrag, 0.05f, ScreenMessageStyle.UPPER_RIGHT);
-            ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag, 0.05f, ScreenMessageStyle.UPPER_LEFT);
-            */
+                atmoDrag[atmoDragPos].z = (atmoDrag[atmoDragPos].z + Math.Abs(lastTicksAngularVelocity.z - vessel.angularVelocityD.z)) / 2;
+
+            if (steerDragPos == 127)
+                steerDragPos = 1;
+            else
+                steerDragPos++;
+
+            if (atmoDragPos == 127)
+                atmoDragPos = 1;
+            else
+                atmoDragPos++;
+
 
             lastTicksAngularVelocity = vessel.angularVelocityD;
 
@@ -495,10 +507,50 @@ namespace BenjisHardwiredLogic
             ScreenMessages.PostScreenMessage("azimuth: " + azimuth, 10f, ScreenMessageStyle.UPPER_CENTER);
             */
 
+            for (int i = 1; i < 128; i++)
+            {
+                steerDrag[i].x = 0;
+                steerDrag[i].y = 0;
+                steerDrag[i].z = 0;
+                atmoDrag[i].x = 0;
+                atmoDrag[i].y = 0;
+                atmoDrag[i].z = 0;
+            }
+
             vessel.OnFlyByWire += steeringMeasurements;
             vessel.OnFlyByWire += steeringStraightUp;
 
+            StartCoroutine(coroutineSteeringMeasurements());
             StartCoroutine(coroutineWaitForRollManeuver());
+        }
+
+        IEnumerator coroutineSteeringMeasurements()
+        {
+            for (; ; )
+            {
+                for (int i = 1; i < 128; i++)
+                {
+                    steerDrag[0].x += steerDrag[i].x;
+                    steerDrag[0].y += steerDrag[i].y;
+                    steerDrag[0].z += steerDrag[i].z;
+                    atmoDrag[0].x += atmoDrag[i].x;
+                    atmoDrag[0].y += atmoDrag[i].y;
+                    atmoDrag[0].z += atmoDrag[i].z;
+                }
+
+                steerDrag[0].x /= 128;
+                steerDrag[0].y /= 128;
+                steerDrag[0].z /= 128;
+                atmoDrag[0].x /= 128;
+                atmoDrag[0].y /= 128;
+                atmoDrag[0].z /= 128;
+
+
+                ScreenMessages.PostScreenMessage("atmoDrag: " + atmoDrag[0], 0.1f, ScreenMessageStyle.UPPER_RIGHT);
+                ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag[0], 0.1f, ScreenMessageStyle.UPPER_LEFT);
+                
+                yield return new WaitForSeconds(.1f);
+            }
         }
 
         //The roll maneuver rolls the rockets bottom to the horizon
