@@ -125,11 +125,11 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d[] steerDrag = new Vector3d[128];
         [KSPField(isPersistant = true, guiActive = false)]
-        int steerDragPos = 1;
+        int steerDragPos = 2;
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d[] atmoDrag = new Vector3d[128];
         [KSPField(isPersistant = true, guiActive = false)]
-        int atmoDragPos = 1;
+        int atmoDragPos = 2;
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
@@ -206,12 +206,12 @@ namespace BenjisHardwiredLogic
                 atmoDrag[atmoDragPos].z = (atmoDrag[atmoDragPos].z + Math.Abs(lastTicksAngularVelocity.z - vessel.angularVelocityD.z)) / 2;
 
             if (steerDragPos == 127)
-                steerDragPos = 1;
+                steerDragPos = 2;
             else
                 steerDragPos++;
 
             if (atmoDragPos == 127)
-                atmoDragPos = 1;
+                atmoDragPos = 2;
             else
                 atmoDragPos++;
 
@@ -528,23 +528,86 @@ namespace BenjisHardwiredLogic
         {
             for (; ; )
             {
-                for (int i = 1; i < 128; i++)
+                for (int i = 2; i < 128; i++)
                 {
-                    steerDrag[0].x += steerDrag[i].x;
-                    steerDrag[0].y += steerDrag[i].y;
-                    steerDrag[0].z += steerDrag[i].z;
-                    atmoDrag[0].x += atmoDrag[i].x;
-                    atmoDrag[0].y += atmoDrag[i].y;
-                    atmoDrag[0].z += atmoDrag[i].z;
+                    steerDrag[1].x += steerDrag[i].x;
+                    steerDrag[1].y += steerDrag[i].y;
+                    steerDrag[1].z += steerDrag[i].z;
+                    atmoDrag[1].x += atmoDrag[i].x;
+                    atmoDrag[1].y += atmoDrag[i].y;
+                    atmoDrag[1].z += atmoDrag[i].z;
                 }
 
-                steerDrag[0].x /= 128;
-                steerDrag[0].y /= 128;
-                steerDrag[0].z /= 128;
-                atmoDrag[0].x /= 128;
-                atmoDrag[0].y /= 128;
-                atmoDrag[0].z /= 128;
+                steerDrag[1].x /= 127;
+                steerDrag[1].y /= 127;
+                steerDrag[1].z /= 127;
+                atmoDrag[1].x /= 127;
+                atmoDrag[1].y /= 127;
+                atmoDrag[1].z /= 127;
 
+
+                //don'T add measurements that differ too much from the average
+                int j = 0;
+                for (int i = 2; i < 128; i++)
+                {
+                    if (steerDrag[i].x < (1.2 * steerDrag[1].x))
+                        steerDrag[0].x += steerDrag[i].x;
+                    else
+                        j++;
+                }
+                steerDrag[0].x /= (127 - j);
+                j = 0;
+                for (int i = 2; i < 128; i++)
+                {
+                    if (steerDrag[i].y < (1.2 * steerDrag[1].y))
+                        steerDrag[0].y += steerDrag[i].y;
+                    else
+                        j++;
+                }
+                steerDrag[0].y /= (127 - j);
+                j = 0;
+                for (int i = 2; i < 128; i++)
+                {
+                    if (steerDrag[i].z < (1.2 * steerDrag[1].z))
+                        steerDrag[0].z += steerDrag[i].z;
+                    else
+                        j++;
+                }
+                steerDrag[0].z /= (127 - j);
+                j = 0;
+
+
+                for (int i = 2; i < 128; i++)
+                {
+                    if (atmoDrag[i].x < (1.2 * atmoDrag[1].x))
+                        atmoDrag[0].x += atmoDrag[i].x;
+                    else
+                        j++;
+                }
+                atmoDrag[0].x /= (127 - j);
+                j = 0;
+                for (int i = 2; i < 128; i++)
+                {
+                    if (atmoDrag[i].y < (1.2 * atmoDrag[1].y))
+                        atmoDrag[0].y += atmoDrag[i].y;
+                    else
+                        j++;
+                }
+                atmoDrag[0].y /= (127 - j);
+
+                j = 0;
+                for (int i = 2; i < 128; i++)
+                {
+                    if (atmoDrag[i].z < (1.2 * atmoDrag[1].z))
+                        atmoDrag[0].z += atmoDrag[i].z;
+                    else
+                        j++;
+                }
+                atmoDrag[0].z /= (127 - j);
+
+
+
+                
 
                 ScreenMessages.PostScreenMessage("atmoDrag: " + atmoDrag[0], 0.1f, ScreenMessageStyle.UPPER_RIGHT);
                 ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag[0], 0.1f, ScreenMessageStyle.UPPER_LEFT);
