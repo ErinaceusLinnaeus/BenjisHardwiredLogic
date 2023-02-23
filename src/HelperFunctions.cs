@@ -81,6 +81,14 @@ namespace BenjisHardwiredLogic
             else
                 return false;
         }
+        public static bool isInBetweenFactorOf(double one, double limit, double factor)
+        {
+            double fraction = limit * factor;
+            if (one > (limit - factor) && one < (limit + factor))
+                return true;
+            else
+                return false;
+        }
         #endregion
     }
 }

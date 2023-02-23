@@ -121,15 +121,15 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         double directionToRoll;
 
-
+        //Fields to keep track of the vessel's steering dragyness
         [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d[] steerDrag = new Vector3d[128];
+        Vector3d[] steerDragArray = new Vector3d[128];
         [KSPField(isPersistant = true, guiActive = false)]
-        int steerDragPos = 2;
+        int steerDragPos = 0;
         [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d[] atmoDrag = new Vector3d[128];
+        Vector3d steerDragAverage = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
-        int atmoDragPos = 2;
+        Vector3d steerDrag = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
@@ -171,11 +171,15 @@ namespace BenjisHardwiredLogic
         #endregion
 
         #region steering delegates
+
+        //This "steering state" doesn't steer anything. It just keeps track of some data to calculate how much angular change can be achived by steering
         void steeringMeasurements(FlightCtrlState state)
         {
 
+            //Adding up the total angular changes
             sumOfAngulars += vessel.angularVelocityD;
 
+            //And keep the sum within -360° and 360°
             if (sumOfAngulars.x > 360)
                 sumOfAngulars.x += -360;
             else if (sumOfAngulars.x < -360)
@@ -192,32 +196,22 @@ namespace BenjisHardwiredLogic
                 sumOfAngulars.z += 360;
 
 
-            if (Math.Abs(lastTicksSteering.x) > 0.001)
-                steerDrag[steerDragPos].x = (steerDrag[steerDragPos].x + Math.Abs(lastTicksSteering.x / (lastTicksAngularVelocity.x - vessel.angularVelocityD.x))) / 2;
-            else
-                atmoDrag[atmoDragPos].x = (atmoDrag[atmoDragPos].x + Math.Abs(lastTicksAngularVelocity.x - vessel.angularVelocityD.x)) / 2;
-            if (Math.Abs(lastTicksSteering.y) > 0.001)
-                steerDrag[steerDragPos].y = (steerDrag[steerDragPos].y + Math.Abs(lastTicksSteering.y / (lastTicksAngularVelocity.y - vessel.angularVelocityD.y))) / 2;
-            else
-                atmoDrag[atmoDragPos].y = (atmoDrag[atmoDragPos].y + Math.Abs(lastTicksAngularVelocity.y - vessel.angularVelocityD.y)) / 2;
-            if (Math.Abs(lastTicksSteering.z) > 0.001)
-                steerDrag[steerDragPos].z = (steerDrag[steerDragPos].z + Math.Abs(lastTicksSteering.z / (lastTicksAngularVelocity.z - vessel.angularVelocityD.z))) / 2;
-            else
-                atmoDrag[atmoDragPos].z = (atmoDrag[atmoDragPos].z + Math.Abs(lastTicksAngularVelocity.z - vessel.angularVelocityD.z)) / 2;
-
-            if (steerDragPos == 127)
-                steerDragPos = 2;
+            //Store the change in angular change into the temporary array
+            //Ignore tiny steering values to avaoid infinity
+            if (Math.Abs(lastTicksSteering.x) > 0.0001)
+                steerDragArray[steerDragPos].x = (steerDragArray[steerDragPos].x + Math.Abs((lastTicksAngularVelocity.x - vessel.angularVelocityD.x) / lastTicksSteering.x)) / 2;
+            if (Math.Abs(lastTicksSteering.y) > 0.0001)
+                steerDragArray[steerDragPos].y = (steerDragArray[steerDragPos].y + Math.Abs((lastTicksAngularVelocity.y - vessel.angularVelocityD.y) / lastTicksSteering.y)) / 2;
+            if (Math.Abs(lastTicksSteering.z) > 0.0001)
+                steerDragArray[steerDragPos].z = (steerDragArray[steerDragPos].z + Math.Abs((lastTicksAngularVelocity.z - vessel.angularVelocityD.z) / lastTicksSteering.z)) / 2;
+            //Move to next array position
+            if (steerDragPos == (steerDragArray.Length - 1))
+                steerDragPos = 0;
             else
                 steerDragPos++;
 
-            if (atmoDragPos == 127)
-                atmoDragPos = 2;
-            else
-                atmoDragPos++;
-
-
+            //Keep this tick's angular and steering for next tick's calculation
             lastTicksAngularVelocity = vessel.angularVelocityD;
-
             lastTicksSteering.x = state.pitch;
             lastTicksSteering.y = state.roll;
             lastTicksSteering.z = state.yaw;
@@ -507,14 +501,12 @@ namespace BenjisHardwiredLogic
             ScreenMessages.PostScreenMessage("azimuth: " + azimuth, 10f, ScreenMessageStyle.UPPER_CENTER);
             */
 
-            for (int i = 1; i < 128; i++)
+            //Setting all the elemts of the Drag Array to zero
+            for (int i = 0; i < steerDragArray.Length; i++)
             {
-                steerDrag[i].x = 0;
-                steerDrag[i].y = 0;
-                steerDrag[i].z = 0;
-                atmoDrag[i].x = 0;
-                atmoDrag[i].y = 0;
-                atmoDrag[i].z = 0;
+                steerDragArray[i].x = 0;
+                steerDragArray[i].y = 0;
+                steerDragArray[i].z = 0;
             }
 
             vessel.OnFlyByWire += steeringMeasurements;
@@ -524,94 +516,52 @@ namespace BenjisHardwiredLogic
             StartCoroutine(coroutineWaitForRollManeuver());
         }
 
+        //This coroutine will use the data collected by steeringMeasurements and calculate the actual "dragyness"/effectiveness of the gimbaling/steering
         IEnumerator coroutineSteeringMeasurements()
         {
             for (; ; )
             {
-                for (int i = 2; i < 128; i++)
+                //Add up all the values in the array...
+                for (int i = 0; i < steerDragArray.Length; i++)
                 {
-                    steerDrag[1].x += steerDrag[i].x;
-                    steerDrag[1].y += steerDrag[i].y;
-                    steerDrag[1].z += steerDrag[i].z;
-                    atmoDrag[1].x += atmoDrag[i].x;
-                    atmoDrag[1].y += atmoDrag[i].y;
-                    atmoDrag[1].z += atmoDrag[i].z;
+                    steerDragAverage.x += steerDragArray[i].x;
+                    steerDragAverage.y += steerDragArray[i].y;
+                    steerDragAverage.z += steerDragArray[i].z;
                 }
+                //...and divide it by the amount of elements...
+                //...resulting in an average over the last 128 measurements
+                steerDragAverage.x /= steerDragArray.Length;
+                steerDragAverage.y /= steerDragArray.Length;
+                steerDragAverage.z /= steerDragArray.Length;
 
-                steerDrag[1].x /= 127;
-                steerDrag[1].y /= 127;
-                steerDrag[1].z /= 127;
-                atmoDrag[1].x /= 127;
-                atmoDrag[1].y /= 127;
-                atmoDrag[1].z /= 127;
+                //Now do FindObjectsOfTypeAll this again, but leave out any value that differs by more than 10% from the average
+                int jX, jY, jZ;
+                jX = jY = jZ = steerDragArray.Length;
 
-
-                //don'T add measurements that differ too much from the average
-                int j = 0;
-                for (int i = 2; i < 128; i++)
+                for (int i = 0; i < steerDragArray.Length; i++)
                 {
-                    if (steerDrag[i].x < (1.2 * steerDrag[1].x))
-                        steerDrag[0].x += steerDrag[i].x;
+                    if (HelperFunctions.isInBetweenFactorOf(steerDragArray[i].x, steerDragAverage.x, 0.1))
+                        steerDrag.x += steerDragArray[i].x;
                     else
-                        j++;
-                }
-                steerDrag[0].x /= (127 - j);
-                j = 0;
-                for (int i = 2; i < 128; i++)
-                {
-                    if (steerDrag[i].y < (1.2 * steerDrag[1].y))
-                        steerDrag[0].y += steerDrag[i].y;
+                        jX--; //Substract the ignored elements...
+
+                    if (HelperFunctions.isInBetweenFactorOf(steerDragArray[i].y, steerDragAverage.y, 0.1))
+                        steerDrag.y += steerDragArray[i].y;
                     else
-                        j++;
-                }
-                steerDrag[0].y /= (127 - j);
-                j = 0;
-                for (int i = 2; i < 128; i++)
-                {
-                    if (steerDrag[i].z < (1.2 * steerDrag[1].z))
-                        steerDrag[0].z += steerDrag[i].z;
+                        jY--; //Substract the ignored elements...
+
+                    if (HelperFunctions.isInBetweenFactorOf(steerDragArray[i].z, steerDragAverage.z, 0.1))
+                        steerDrag.z += steerDragArray[i].z;
                     else
-                        j++;
+                        jZ--; //Substract the ignored elements...
                 }
-                steerDrag[0].z /= (127 - j);
-                j = 0;
+                //..to get a correct final average result
+                steerDrag.x /= jX;
+                steerDrag.y /= jY;
+                steerDrag.z /= jZ;
 
+                ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag, 0.1f, ScreenMessageStyle.LOWER_CENTER);
 
-                for (int i = 2; i < 128; i++)
-                {
-                    if (atmoDrag[i].x < (1.2 * atmoDrag[1].x))
-                        atmoDrag[0].x += atmoDrag[i].x;
-                    else
-                        j++;
-                }
-                atmoDrag[0].x /= (127 - j);
-                j = 0;
-                for (int i = 2; i < 128; i++)
-                {
-                    if (atmoDrag[i].y < (1.2 * atmoDrag[1].y))
-                        atmoDrag[0].y += atmoDrag[i].y;
-                    else
-                        j++;
-                }
-                atmoDrag[0].y /= (127 - j);
-
-                j = 0;
-                for (int i = 2; i < 128; i++)
-                {
-                    if (atmoDrag[i].z < (1.2 * atmoDrag[1].z))
-                        atmoDrag[0].z += atmoDrag[i].z;
-                    else
-                        j++;
-                }
-                atmoDrag[0].z /= (127 - j);
-
-
-
-                
-
-                ScreenMessages.PostScreenMessage("atmoDrag: " + atmoDrag[0], 0.1f, ScreenMessageStyle.UPPER_RIGHT);
-                ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag[0], 0.1f, ScreenMessageStyle.UPPER_LEFT);
-                
                 yield return new WaitForSeconds(.1f);
             }
         }
