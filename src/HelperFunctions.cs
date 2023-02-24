@@ -44,7 +44,7 @@ namespace BenjisHardwiredLogic
             else
                 return one;
         }
-        public static double inRange(double one, double min, double max)
+        public static double limit(double one, double min, double max)
         {
             if (one < min)
                 return min;

@@ -33,28 +33,9 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private double azimuth = 0;
 
-        //Save the direction we need to pitch and yaw to, depending on the azimuth and how the rocket is oriented on the pad
-        //x: pitch
-        //y: yaw
-        [KSPField(isPersistant = true, guiActive = false)]
-        UnityEngine.Vector2d headingToAzimuth;
-
         //Keeping track of the pitch rate
         [KSPField(isPersistant = true, guiActive = false)]
         private double desiredPitch = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double tMinus1Yaw = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double tZeroYaw = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double deltaYaw = 0;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularPitch = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularYaw = 0;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double sumOfAngularRoll = 0;
         [KSPField(isPersistant = true, guiActive = false)]
         private Vector3d sumOfAngulars;
 
@@ -97,7 +78,6 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d orbitalNormal;
 
-
         [KSPField(isPersistant = true, guiActive = false)]
         double launchSiteLat;
         [KSPField(isPersistant = true, guiActive = false)]
@@ -109,17 +89,6 @@ namespace BenjisHardwiredLogic
         Vector3d markVector;
         [KSPField(isPersistant = true, guiActive = false)]
         double bodysCircumference;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d shipLeft;
-        [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d directionAzimuth;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double angleToRoll;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double anglePrev;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double directionToRoll;
 
         //Fields to keep track of the vessel's steering dragyness
         [KSPField(isPersistant = true, guiActive = false)]
@@ -148,12 +117,7 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Orbital Direction", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_ChooseOption(options = new string[2] { "Prograde", "Retrograde" })]
         private string desiredOrbitalDirection = "Prograde";
-        /*
-        //Specify if we should follow the azimuth to the north or the south
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Launchdirection", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
-            UI_ChooseOption(options = new string[4] { "SE", "NE", "NW", "SW" })]
-        private string desiredDirectionToLaunch = "SE";
-        */
+
         //The PAW fields in Flight
         //Shows if the decoupler is active
         [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
@@ -175,9 +139,8 @@ namespace BenjisHardwiredLogic
         //This "steering state" doesn't steer anything. It just keeps track of some data to calculate how much angular change can be achived by steering
         void steeringMeasurements(FlightCtrlState state)
         {
-
             //Adding up the total angular changes
-            sumOfAngulars += vessel.angularVelocityD;
+            sumOfAngulars += vessel.angularVelocityD * TimeWarp.CurrentRate;
 
             //And keep the sum within -360° and 360°
             if (sumOfAngulars.x > 360)
@@ -194,7 +157,6 @@ namespace BenjisHardwiredLogic
                 sumOfAngulars.z += -360;
             else if (sumOfAngulars.z < -360)
                 sumOfAngulars.z += 360;
-
 
             //Store the change in angular change into the temporary array
             //Ignore tiny steering values to avaoid infinity
@@ -215,71 +177,34 @@ namespace BenjisHardwiredLogic
             lastTicksSteering.x = state.pitch;
             lastTicksSteering.y = state.roll;
             lastTicksSteering.z = state.yaw;
-
         }
         void steeringStraightUp(FlightCtrlState state)
         {
             //state.pitch = (float)lastTicksSteering.x;
             //state.roll = (float)lastTicksSteering.y;
             //state.yaw = (float)lastTicksSteering.z;
-
         }
         void steeringRollManeuver(FlightCtrlState state)
         {
-
-            /*
-            if (vessel.angularVelocityD.y > 5)
-                state.roll = (float)(sumOfAngularRoll / 90) / TimeWarp.CurrentRate;
-            else
-                state.roll = (float)(sumOfAngularRoll / 450) / TimeWarp.CurrentRate;
-            */
-
-            //state.roll = (float)HelperFunctions.inRange(steerDrag.y * sumOfAngularRoll, -0.2, 0.2);
-
-
-
-            /*
-            double angleNow = HelperFunctions.degAngle(shipLeft, directionAzimuth);
-
-            if (anglePrev > angleNow)
-                directionToRoll = -1;
-            else
-                directionToRoll = 1;
-
-            //Ship's pointing that way
-            shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(0, 0, 0) * Vector3d.left).normalized;
-
-            ScreenMessages.PostScreenMessage("angle: " + HelperFunctions.degAngle(shipLeft, directionAzimuth), 0.1f, ScreenMessageStyle.UPPER_CENTER);
-
-            state.roll = (float)directionToRoll * 0.5f;
-            */
-            /*
-            if (HelperFunctions.degAngle(shipLeft, directionAzimuth) <= 1)
+            //Calculating at what angular difference to 0 the counter steering needs to happen
+            double pointToTurn = 0;
+            for (double d = Math.Abs(vessel.angularVelocityD.y); d > 0; d -= steerDrag.y)
             {
-                sumOfAngularRoll += vessel.angularVelocityD.y;
-                state.roll = (float)(steeringAggressiveness.y * (vessel.angularVelocityD.y + sumOfAngularRoll)) / TimeWarp.CurrentRate;
+                pointToTurn += d;
             }
+
+            //FOR NOW:
+            //Multiplying by a factor of 1.5 to account for latency and atmospheric drag
+            //Let's see if it needs adjustment at some point
+            if (sumOfAngulars.y >= 0)
+                pointToTurn *= -1.5;
             else
-            {
-                if (angleToRoll <= (2 * HelperFunctions.degAngle(shipLeft, directionAzimuth)))
-                {
-                    state.roll = 0.5f;
-                }
-                else
-                {
-                    state.roll = -0.3f;
-                }
-            }*/
-            //state.pitch = 0;
-            //state.yaw = 0;
-            //state.roll = (float)HelperFunctions.limitAbs(((rollAngle - 90d) / 2d), 1.0);
+                pointToTurn *= 1.5;
 
-            //anglePrev = angleNow;
-
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y + pointToTurn) / 10)) / TimeWarp.CurrentRate), -1, 1);
         }
         void steeringGravityTurn(FlightCtrlState state)
         {
-
             Vector3d flightDirection;
 
             if (vessel.orbit.altitude < 45000)
@@ -299,16 +224,14 @@ namespace BenjisHardwiredLogic
                 //state.pitch = - (float)HelperFunctions.limitAbs(((sumOfAngularPitch - desiredPitch) / 2d), 0.5);
                 state.pitch = 0.1f;
             }
-            state.yaw = (float)(steeringAggressiveness.z * (vessel.angularVelocityD.z + sumOfAngularYaw)) / TimeWarp.CurrentRate;
-            state.roll = (float)(steeringAggressiveness.y * (vessel.angularVelocityD.y + sumOfAngularRoll)) / TimeWarp.CurrentRate;
+            state.yaw = (float)(steeringAggressiveness.z * (vessel.angularVelocityD.z + sumOfAngulars.z)) / TimeWarp.CurrentRate;
+            state.roll = (float)(steeringAggressiveness.y * (vessel.angularVelocityD.y + sumOfAngulars.y)) / TimeWarp.CurrentRate;
         }
         void steeringLeveledFlight(FlightCtrlState state)
         {
-
             state.pitch = 0;
             state.yaw = 0;
             state.roll = 0;
-
         }
 
         #endregion
@@ -413,6 +336,9 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
+
+            //////////////////////////
+            ///Not sure if we need all this....
             //Set the launch time
             launchTime = Planetarium.GetUniversalTime();
 
@@ -422,84 +348,44 @@ namespace BenjisHardwiredLogic
             //Not used right now, but to have it complete:
             orbitalFrame = UnityEngine.QuaternionD.LookRotation(orbitalPrograde, orbitalRadial);
             orbitalNormal = orbitalFrame * Vector3d.left;
+            //////////////////////////
 
+
+            //Needed to calculate the angle deviation when downrange distance gets bigger
+            //The planets curves away as the vessel travels downrange distance => MORE ANGLE
             launchSiteLat = vessel.latitude;
             launchSiteLong = vessel.longitude;
 
             markVector = FlightGlobals.Bodies[1].GetSurfaceNVector(launchSiteLat, launchSiteLong);
             bodysCircumference = 2 * Math.PI * FlightGlobals.Bodies[1].Radius;
 
+
+            //Calculate the "heading" the vessel needs to roll into, to end up at the desired inclination
+            //Lower inclinations than the launch-site's are not possible 
             if (desiredInclination <= Math.Abs(launchSiteLat))
                 azimuth = Math.Abs(launchSiteLat);
             else
                 azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
-            if (launchSiteLat < 0)
+
+            //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
+            if (desiredOrbitalDirection == "Prograde")
             {
-                if (desiredOrbitalDirection == "Prograde")
-                    azimuth = 360 - azimuth;
+                if (launchSiteLat < 0)
+                    sumOfAngulars.y = -(90 - azimuth);
                 else
-                    azimuth = 180 + azimuth;
+                    sumOfAngulars.y = -(90 + azimuth);
             }
+            //And turning it the other direction if launching retrograde
             else
             {
-                if (desiredOrbitalDirection == "Retrograde")
-                    azimuth = 180 - azimuth;
+                if (launchSiteLat < 0)
+                    sumOfAngulars.y = -(270 - azimuth);
+                else
+                    sumOfAngulars.y = -(270 + azimuth);
             }
+            //Negative, because the auto-steering will try to end up at 0°.
 
-            shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(0, 0, 0) * Vector3d.left;
-            directionAzimuth = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(0, (float)azimuth, 0) * Vector3d.left;
-
-            if (launchSiteLat < 0)
-                sumOfAngularRoll = -azimuth;
-            else
-                sumOfAngularRoll = azimuth;
-            /*
-            angleToRoll = HelperFunctions.degAngle(shipLeft, directionAzimuth);
-            anglePrev = angleToRoll;
-            
-            ScreenMessages.PostScreenMessage("angle: " + HelperFunctions.degAngle(shipLeft, directionAzimuth), 10f, ScreenMessageStyle.UPPER_CENTER);
-            */
-            //Rotate the ships coordinates, so we match the desired launch direction and get the correct pitch and yaw settings
-            //if (desiredDirectionToLaunch == "SE")
-            if (HelperFunctions.isInRangeOf(desiredInclination, 270, 359.9))
-            {
-                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
-                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
-                //headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                //headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
-            }
-            //else if (desiredDirectionToLaunch == "NE")
-            else if (HelperFunctions.isInRangeOf(desiredInclination, 0, 90))
-            {
-                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
-                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
-                //headingToAzimuth.x = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                //headingToAzimuth.y = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
-            }
-            //else if (desiredDirectionToLaunch == "NW")
-            else if (HelperFunctions.isInRangeOf(desiredInclination, 91.1, 180))
-            {
-                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.left;
-                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, -(float)azimuth, 0) * Vector3d.up;
-                //headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                //headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
-            }
-            //else if (desiredDirectionToLaunch == "SW")
-            else if (HelperFunctions.isInRangeOf(desiredInclination, 180.1, 269.9))
-            {
-                shipLeft = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.left;
-                //Vector3d shipUp = vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, (float)azimuth, 0) * Vector3d.up;
-                //headingToAzimuth.x = -1 * HelperFunctions.scalarProduct(orbitalPrograde, shipUp);
-                //headingToAzimuth.y = 1 * HelperFunctions.scalarProduct(orbitalPrograde, shipLeft);
-            }
-            /*
-            double rollAngle = HelperFunctions.degAngle(shipLeft, orbitalPrograde);
-            ScreenMessages.PostScreenMessage("desInc: " + desiredInclination, 10f, ScreenMessageStyle.UPPER_CENTER);
-            ScreenMessages.PostScreenMessage("shipLat: " + vessel.latitude, 10f, ScreenMessageStyle.UPPER_CENTER);
-            ScreenMessages.PostScreenMessage("siteLat: " + launchSiteLat, 10f, ScreenMessageStyle.UPPER_CENTER);
-            ScreenMessages.PostScreenMessage("azimuth: " + azimuth, 10f, ScreenMessageStyle.UPPER_CENTER);
-            */
 
             //Setting all the elemts of the Drag Array to zero
             for (int i = 0; i < steerDragArray.Length; i++)
@@ -593,9 +479,7 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 2;
             for (; ; )
             {
-                //if (vessel.verticalSpeed >= 100)
-
-                if (vessel.verticalSpeed >= 10000)
+                if (vessel.verticalSpeed >= 100)
                 {
                     vessel.OnFlyByWire -= steeringStraightUp;
                     vessel.OnFlyByWire += steeringGravityTurn;
@@ -648,7 +532,7 @@ namespace BenjisHardwiredLogic
                     desiredPitch = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
 
                 ScreenMessages.PostScreenMessage("desired pitch: " + desiredPitch, 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                ScreenMessages.PostScreenMessage("actual pitch: " + sumOfAngularPitch, 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("actual pitch: " + sumOfAngulars.x, 0.4f, ScreenMessageStyle.UPPER_LEFT);
                 //ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
                 ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
 
@@ -689,16 +573,6 @@ namespace BenjisHardwiredLogic
                         yield break;
                     }
                 }
-
-
-                //angularvelocity:
-                //x : -pitch
-                //y : -roll
-                //z : -yaw
-                ScreenMessages.PostScreenMessage("x : " + Math.Round(vessel.angularVelocityD.x, 3) + " ... " + Math.Round(sumOfAngularPitch, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("y : " + Math.Round(vessel.angularVelocityD.y, 3) + " ... " + Math.Round(sumOfAngularRoll, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("z : " + Math.Round(vessel.angularVelocityD.z, 3) + " ... " + Math.Round(sumOfAngularYaw, 3), 1f, ScreenMessageStyle.UPPER_CENTER);
-
 
                 yield return new WaitForSeconds(1.2f);
             }
