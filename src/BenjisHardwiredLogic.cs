@@ -103,6 +103,8 @@ namespace BenjisHardwiredLogic
         Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d lastTicksAngularVelocity = new Vector3d(0, 0, 0);
+        [KSPField(isPersistant = true, guiActive = false)]
+        Vector3d pointToTurn = new Vector3d(0, 0, 0);
 
         //The PAW fields in the editor
         //A button to enable or disable the module
@@ -180,28 +182,32 @@ namespace BenjisHardwiredLogic
         }
         void steeringStraightUp(FlightCtrlState state)
         {
-            //state.pitch = (float)lastTicksSteering.x;
-            //state.roll = (float)lastTicksSteering.y;
-            //state.yaw = (float)lastTicksSteering.z;
+            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            
         }
         void steeringRollManeuver(FlightCtrlState state)
         {
             //Calculating at what angular difference to 0 the counter steering needs to happen
-            double pointToTurn = 0;
+            pointToTurn.y = 0;
+
             for (double d = Math.Abs(vessel.angularVelocityD.y); d > 0; d -= steerDrag.y)
             {
-                pointToTurn += d;
+                pointToTurn.y += d;
             }
 
             //FOR NOW:
             //Multiplying by a factor of 1.5 to account for latency and atmospheric drag
             //Let's see if it needs adjustment at some point
             if (sumOfAngulars.y >= 0)
-                pointToTurn *= -1.5;
+                pointToTurn.y *= -1.5;
             else
-                pointToTurn *= 1.5;
+                pointToTurn.y *= 1.5;
 
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y + pointToTurn) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y + pointToTurn.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
         }
         void steeringGravityTurn(FlightCtrlState state)
         {
@@ -216,16 +222,18 @@ namespace BenjisHardwiredLogic
             if (HelperFunctions.degAngle(orbitalRadial, flightDirection) < desiredPitch)
             //if (sumOfAngularPitch < desiredPitch)
             {
-                //state.pitch = (float)HelperFunctions.limitAbs(((sumOfAngularPitch - desiredPitch) / 2d), 0.5);
-                state.pitch = -0.1f;
+                //state.pitch = - (float)HelperFunctions.limitAbs(((sumOfAngulars.x - desiredPitch) / 2d), 0.5);
+                state.pitch = - (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (desiredPitch) / 10)) / TimeWarp.CurrentRate), -0.1, 0.1);
+                //state.pitch = -0.1f;
             }
             else
             {
-                //state.pitch = - (float)HelperFunctions.limitAbs(((sumOfAngularPitch - desiredPitch) / 2d), 0.5);
-                state.pitch = 0.1f;
+                //state.pitch = (float)HelperFunctions.limitAbs(((sumOfAngulars.x - desiredPitch) / 2d), 0.5);
+                state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (desiredPitch) / 10)) / TimeWarp.CurrentRate), -0.1, 0.1);
+                //state.pitch = 0.1f;
             }
-            state.yaw = (float)(steeringAggressiveness.z * (vessel.angularVelocityD.z + sumOfAngulars.z)) / TimeWarp.CurrentRate;
-            state.roll = (float)(steeringAggressiveness.y * (vessel.angularVelocityD.y + sumOfAngulars.y)) / TimeWarp.CurrentRate;
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
         }
         void steeringLeveledFlight(FlightCtrlState state)
         {
@@ -367,26 +375,6 @@ namespace BenjisHardwiredLogic
             else
                 azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
-
-            //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
-            if (desiredOrbitalDirection == "Prograde")
-            {
-                if (launchSiteLat < 0)
-                    sumOfAngulars.y = -(90 - azimuth);
-                else
-                    sumOfAngulars.y = -(90 + azimuth);
-            }
-            //And turning it the other direction if launching retrograde
-            else
-            {
-                if (launchSiteLat < 0)
-                    sumOfAngulars.y = -(270 - azimuth);
-                else
-                    sumOfAngulars.y = -(270 + azimuth);
-            }
-            //Negative, because the auto-steering will try to end up at 0°.
-
-
             //Setting all the elemts of the Drag Array to zero
             for (int i = 0; i < steerDragArray.Length; i++)
             {
@@ -446,8 +434,6 @@ namespace BenjisHardwiredLogic
                 steerDrag.y /= jY;
                 steerDrag.z /= jZ;
 
-                ScreenMessages.PostScreenMessage("steerDrag: " + steerDrag, 0.1f, ScreenMessageStyle.LOWER_CENTER);
-
                 yield return new WaitForSeconds(.1f);
             }
         }
@@ -462,6 +448,25 @@ namespace BenjisHardwiredLogic
             {
                 if (vessel.verticalSpeed >= 10)
                 {
+                    //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
+                    if (desiredOrbitalDirection == "Prograde")
+                    {
+                        if (launchSiteLat < 0)
+                            sumOfAngulars.y = -(90 - azimuth);
+                        else
+                            sumOfAngulars.y = -(90 + azimuth);
+                    }
+                    //And turning it the other direction if launching retrograde
+                    else
+                    {
+                        if (launchSiteLat < 0)
+                            sumOfAngulars.y = -(270 - azimuth);
+                        else
+                            sumOfAngulars.y = -(270 + azimuth);
+                    }
+                    //Negative, because the auto-steering will try to end up at 0°.
+
+                    vessel.OnFlyByWire -= steeringStraightUp;
                     vessel.OnFlyByWire += steeringRollManeuver;
 
                     StartCoroutine(coroutineWaitForGravTurn());
@@ -481,7 +486,6 @@ namespace BenjisHardwiredLogic
             {
                 if (vessel.verticalSpeed >= 100)
                 {
-                    vessel.OnFlyByWire -= steeringStraightUp;
                     vessel.OnFlyByWire += steeringGravityTurn;
 
                     StartCoroutine(coroutineWaitForCoasting());
