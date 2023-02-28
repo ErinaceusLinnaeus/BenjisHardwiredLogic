@@ -58,7 +58,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BenjisHardwiredLogic.cs" />
+    <Compile Include="BenjisDelayedDecoupler.cs" />
+    <Compile Include="BenjisDelayedIgniter.cs" />
+    <Compile Include="BenjisDelayedRCS.cs" />
+    <Compile Include="BenjisAutoAscent.cs" />
+    <Compile Include="BenjisFairingSeparator.cs" />
     <Compile Include="HelperFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
