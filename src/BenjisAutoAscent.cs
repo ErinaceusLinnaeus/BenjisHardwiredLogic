@@ -89,9 +89,9 @@ namespace BenjisHardwiredLogic
         private double bodysCircumference;
 
         //Fields to keep track of the vessel's steering dragyness
-        [KSPField(isPersistant = true, guiActive = false)]
+        //[KSPField(isPersistant = true, guiActive = false)]
         private Vector3d[] steerDragArray = new Vector3d[128];
-        [KSPField(isPersistant = true, guiActive = false)]
+        //[KSPField(isPersistant = true, guiActive = false)]
         private int steerDragPos = 0;
         [KSPField(isPersistant = true, guiActive = false)]
         private Vector3d steerDragAverage = new Vector3d(0, 0, 0);
