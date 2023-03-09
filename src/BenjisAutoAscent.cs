@@ -88,6 +88,9 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private double bodysCircumference;
 
+        [KSPField(isPersistant = true, guiActive = false)]
+        private DirectionTarget ascentGuidance = new DirectionTarget("ascentGuidance");
+
         //Fields to keep track of the vessel's steering dragyness
         //[KSPField(isPersistant = true, guiActive = false)]
         private Vector3d[] steerDragArray = new Vector3d[128];
@@ -204,13 +207,13 @@ namespace BenjisHardwiredLogic
                 pointToTurn.y *= 1.5;
 
             state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + ((sumOfAngulars.y - desiredHeading.y) + pointToTurn.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + ((sumOfAngulars.y) + pointToTurn.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
             state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
         }
         private void steeringGravityTurn(FlightCtrlState state)
         {
 
-
+            /*
             Vector3d flightDirection, shipUp;
 
             if (vessel.orbit.altitude < 45000)
@@ -219,8 +222,8 @@ namespace BenjisHardwiredLogic
                 flightDirection = vessel.obt_velocity;
 
             shipUp = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(0, 0, 0) * Vector3d.up).normalized;
-
-            ScreenMessages.PostScreenMessage("AoA: " + HelperFunctions.degAngle(flightDirection, shipUp), 0.1f, ScreenMessageStyle.UPPER_LEFT);
+            */
+            //ScreenMessages.PostScreenMessage("AoA: " + HelperFunctions.degAngle(flightDirection, shipUp), 0.1f, ScreenMessageStyle.UPPER_LEFT);
 
 
             /*
@@ -248,7 +251,7 @@ namespace BenjisHardwiredLogic
             //TEST WITH MUCH SOFTER PITCHING
             //sumOfAngulars.x = -(desiredPitch / 10);
 
-
+            /*
             //Calculating at what angular difference to 0 the counter steering needs to happen
             pointToTurn.x = 0;
 
@@ -264,14 +267,13 @@ namespace BenjisHardwiredLogic
                 pointToTurn.x *= -1.5;
             else
                 pointToTurn.x *= 1.5;
+            
+            double tempPitch = HelperFunctions.limit((((vessel.angularVelocityD.x + ((sumOfAngulars.x - desiredHeading.x) + pointToTurn.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.pitch = (float)(Math.Abs((HelperFunctions.degAngle(flightDirection, shipUp) / 5) - 1) * tempPitch);
 
-            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + ((sumOfAngulars.x - desiredHeading.x / 10) + pointToTurn.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
-
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + ((sumOfAngulars.y) + pointToTurn.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
             state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
-
-            ScreenMessages.PostScreenMessage("desired pitch: " + (desiredHeading.x / 10), 0.1f, ScreenMessageStyle.UPPER_CENTER);
-            ScreenMessages.PostScreenMessage("pitch: " + state.pitch, 0.1f, ScreenMessageStyle.UPPER_RIGHT);
+            */
 
         }
         private void steeringLeveledFlight(FlightCtrlState state)
@@ -383,7 +385,11 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
-            //////////////////////////
+            //Need to turn on SAS (in stability mode) or else ksp crashes when we start giving steering commands
+            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
+            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.StabilityAssist);
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             ///Not sure if we need all this....
             //Set the launch time
             launchTime = Planetarium.GetUniversalTime();
@@ -394,7 +400,7 @@ namespace BenjisHardwiredLogic
             //Not used right now, but to have it complete:
             orbitalFrame = UnityEngine.QuaternionD.LookRotation(orbitalPrograde, orbitalRadial);
             orbitalNormal = orbitalFrame * Vector3d.left;
-            //////////////////////////
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
             //Needed to calculate the angle deviation when downrange distance gets bigger
@@ -413,6 +419,23 @@ namespace BenjisHardwiredLogic
             else
                 azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
+            //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
+            if (desiredOrbitalDirection == "Prograde")
+            {
+                if (launchSiteLat < 0)
+                    desiredHeading.y = (90 - azimuth);
+                else
+                    desiredHeading.y = (90 + azimuth);
+            }
+            //And turning it the other direction if launching retrograde
+            else
+            {
+                if (launchSiteLat < 0)
+                    desiredHeading.y = (270 - azimuth);
+                else
+                    desiredHeading.y = (270 + azimuth);
+            }
+
             //Setting all the elemts of the Drag Array to zero
             for (int i = 0; i < steerDragArray.Length; i++)
             {
@@ -421,11 +444,12 @@ namespace BenjisHardwiredLogic
                 steerDragArray[i].z = 0;
             }
 
+            StartCoroutine(coroutineSteeringMeasurements());
+            StartCoroutine(coroutineWaitForRollManeuver());
+
             vessel.OnFlyByWire += steeringMeasurements;
             vessel.OnFlyByWire += steeringStraightUp;
 
-            StartCoroutine(coroutineSteeringMeasurements());
-            StartCoroutine(coroutineWaitForRollManeuver());
         }
 
         //This coroutine will use the data collected by steeringMeasurements and calculate the actual "dragyness"/effectiveness of the gimbaling/steering
@@ -486,25 +510,9 @@ namespace BenjisHardwiredLogic
             {
                 if (vessel.verticalSpeed >= 10)
                 {
-                    //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
-                    if (desiredOrbitalDirection == "Prograde")
-                    {
-                        if (launchSiteLat < 0)
-                            desiredHeading.y = (90 - azimuth);
-                        else
-                            desiredHeading.y = (90 + azimuth);
-                    }
-                    //And turning it the other direction if launching retrograde
-                    else
-                    {
-                        if (launchSiteLat < 0)
-                            desiredHeading.y = (270 - azimuth);
-                        else
-                            desiredHeading.y = (270 + azimuth);
-                    }
-                    //Negative, because the auto-steering will try to end up at 0°.
-
                     vessel.OnFlyByWire -= steeringStraightUp;
+                    //Negative, because the auto-steering will try to end up at 0°.
+                    sumOfAngulars.y = -desiredHeading.y;
                     vessel.OnFlyByWire += steeringRollManeuver;
 
                     StartCoroutine(coroutineWaitForGravTurn());
@@ -522,9 +530,16 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 2;
             for (; ; )
             {
-                if (vessel.verticalSpeed >= 100)
+                if (vessel.verticalSpeed >= 125)
                 {
+                    //Set the ascent guidance marker as target
+                    FlightGlobals.fetch.SetVesselTarget(ascentGuidance, vessel);
+
                     vessel.OnFlyByWire += steeringGravityTurn;
+                    vessel.OnFlyByWire -= steeringRollManeuver;
+
+                    //Follow the target (which is hopefully the ascent curve)
+                    vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
 
                     StartCoroutine(coroutineWaitForCoasting());
                     StartCoroutine(coroutineCalculateGravityTurn());
@@ -572,12 +587,8 @@ namespace BenjisHardwiredLogic
                     desiredHeading.x = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
                 else
                     desiredHeading.x = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
-                /*
-                ScreenMessages.PostScreenMessage("desired pitch: " + desiredPitch, 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                ScreenMessages.PostScreenMessage("actual pitch: " + sumOfAngulars.x, 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                //ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                ScreenMessages.PostScreenMessage("actual heading: " + HelperFunctions.degAngle(orbitalRadial, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                */
+
+
                 //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
                 Vector3d vesselVector = vessel.CoM - FlightGlobals.Bodies[1].transform.position;
                 downrangeDistance = (FlightGlobals.Bodies[1].Radius * HelperFunctions.radAngle(markVector, vesselVector));
@@ -587,10 +598,15 @@ namespace BenjisHardwiredLogic
                 //Add it up
                 desiredHeading.x = desiredHeading.x + angleCorrection;
 
-                //ScreenMessages.PostScreenMessage("downrange: " + downrangeDistance, 0.4f, ScreenMessageStyle.UPPER_RIGHT);
-                //ScreenMessages.PostScreenMessage("AngleCorrection: " + ((downrangeDistance / umfang) * 360), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
 
-                yield return new WaitForSeconds(.5f);
+                AKTUELLER SCHEISS
+
+                //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
+                //vessel, pitch, heading, false=degree
+                ascentGuidance.Update(vessel, 90, 90, false);
+
+
+                yield return new WaitForSeconds(.1f);
             }
         }
 
