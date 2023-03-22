@@ -27,7 +27,7 @@ namespace BenjisHardwiredLogic
 
         //Saving UniversalTime into launchTime when the Vessel getÞs launched
         [KSPField(isPersistant = true, guiActive = false)]
-        private double launchTime = 0;
+        private double launchData_Time = 0;
 
         //The azimuth we're heading at
         [KSPField(isPersistant = true, guiActive = false)]
@@ -77,9 +77,9 @@ namespace BenjisHardwiredLogic
         private Vector3d orbitalNormal;
 
         [KSPField(isPersistant = true, guiActive = false)]
-        private double launchSiteLat;
+        private double launchData_SiteLat;
         [KSPField(isPersistant = true, guiActive = false)]
-        private double launchSiteLong;
+        private double launchData_SiteLong;
         [KSPField(isPersistant = true, guiActive = false)]
         private double downrangeDistance;
 
@@ -87,9 +87,6 @@ namespace BenjisHardwiredLogic
         private Vector3d markVector;
         [KSPField(isPersistant = true, guiActive = false)]
         private double bodysCircumference;
-
-        [KSPField(isPersistant = true, guiActive = false)]
-        private DirectionTarget ascentGuidance = new DirectionTarget("ascentGuidance");
 
         //Fields to keep track of the vessel's steering dragyness
         //[KSPField(isPersistant = true, guiActive = false)]
@@ -106,10 +103,17 @@ namespace BenjisHardwiredLogic
         private Vector3d lastTicksAngularVelocity;// = new Vector3d(0, 0, 0);
         [KSPField(isPersistant = true, guiActive = false)]
         private Vector3d pointToTurn = new Vector3d(0, 0, 0);
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double steerStrengthFactor = 10;
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double launchData_Altitude;
 
-        //The PAW fields in the editor
-        //A button to enable or disable the module
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        //[KSPField(isPersistant = true, guiActive = false)]
+        private DirectionTarget ascentGuidance = new DirectionTarget("ascentGuidance");
+
+       //The PAW fields in the editor
+       //A button to enable or disable the module
+       [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
         //Specify the inclination you wanna end up at
@@ -117,9 +121,13 @@ namespace BenjisHardwiredLogic
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 90.0f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float desiredInclination = 0;
         //Set the orbit pro- or retrograde
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Orbital Direction", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Orbital Direction", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_ChooseOption(options = new string[2] { "Prograde", "Retrograde" })]
         private string desiredOrbitalDirection = "Prograde";
+        //Set the orbit pro- or retrograde
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "AutoAscent's Roll:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool desiredRoll = true;
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
@@ -181,34 +189,16 @@ namespace BenjisHardwiredLogic
             lastTicksSteering.y = state.roll;
             lastTicksSteering.z = state.yaw;
         }
-        private void steeringStraightUp(FlightCtrlState state)
+        //All the steering happens here
+        private void steeringCommands(FlightCtrlState state)
         {
-            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
-            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
 
-        }
-        private void steeringRollManeuver(FlightCtrlState state)
-        {
-            //Calculating at what angular difference to 0 the counter steering needs to happen
-            pointToTurn.y = 0;
+            //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
 
-            for (double d = Math.Abs(vessel.angularVelocityD.y); d > 0; d -= steerDrag.y)
-            {
-                pointToTurn.y += d;
-            }
 
-            //FOR NOW:
-            //Multiplying by a factor of 1.5 to account for latency and atmospheric drag
-            //Let's see if it needs adjustment at some point
-            if (sumOfAngulars.y >= 0)
-                pointToTurn.y *= -1.5;
-            else
-                pointToTurn.y *= 1.5;
 
-            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + ((sumOfAngulars.y) + pointToTurn.y) / 10)) / TimeWarp.CurrentRate), -1, 1);
-            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
         }
         private void steeringGravityTurn(FlightCtrlState state)
         {
@@ -250,24 +240,7 @@ namespace BenjisHardwiredLogic
 
             //TEST WITH MUCH SOFTER PITCHING
             //sumOfAngulars.x = -(desiredPitch / 10);
-
             /*
-            //Calculating at what angular difference to 0 the counter steering needs to happen
-            pointToTurn.x = 0;
-
-            for (double d = Math.Abs(vessel.angularVelocityD.x); d > 0; d -= steerDrag.x)
-            {
-                pointToTurn.x += d;
-            }
-
-            //FOR NOW:
-            //Multiplying by a factor of 1.5 to account for latency and atmospheric drag
-            //Let's see if it needs adjustment at some point
-            if (sumOfAngulars.x >= 0)
-                pointToTurn.x *= -1.5;
-            else
-                pointToTurn.x *= 1.5;
-            
             double tempPitch = HelperFunctions.limit((((vessel.angularVelocityD.x + ((sumOfAngulars.x - desiredHeading.x) + pointToTurn.x) / 10)) / TimeWarp.CurrentRate), -1, 1);
             state.pitch = (float)(Math.Abs((HelperFunctions.degAngle(flightDirection, shipUp) / 5) - 1) * tempPitch);
 
@@ -275,12 +248,6 @@ namespace BenjisHardwiredLogic
             state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z) / 10)) / TimeWarp.CurrentRate), -1, 1);
             */
 
-        }
-        private void steeringLeveledFlight(FlightCtrlState state)
-        {
-            state.pitch = 0;
-            state.yaw = 0;
-            state.roll = 0;
         }
 
         #endregion
@@ -304,11 +271,10 @@ namespace BenjisHardwiredLogic
         private void isLoading()
         {
             if (activeCoroutine == 1)
-                StartCoroutine(coroutineWaitForRollManeuver());
-            else if (activeCoroutine == 2)
-                StartCoroutine(coroutineWaitForGravTurn());
-            else if (activeCoroutine == 3)
-                StartCoroutine(coroutineWaitForCoasting());
+            {
+                StartCoroutine(coroutineSteeringMeasurements());
+                StartCoroutine(coroutineCalculateAutoAscent());
+            }
 
             if (eventMessagingWanted)
                 StartCoroutine(coroutinePrintMessage());
@@ -360,6 +326,7 @@ namespace BenjisHardwiredLogic
             {
                 Fields[nameof(desiredInclination)].guiActiveEditor = true;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = true;
+                Fields[nameof(desiredRoll)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
@@ -370,6 +337,7 @@ namespace BenjisHardwiredLogic
 
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = false;
+                Fields[nameof(desiredRoll)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
@@ -385,6 +353,8 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
+            launchData_Altitude = vessel.orbit.altitude;
+
             //Need to turn on SAS (in stability mode) or else ksp crashes when we start giving steering commands
             vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
             vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.StabilityAssist);
@@ -392,7 +362,7 @@ namespace BenjisHardwiredLogic
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             ///Not sure if we need all this....
             //Set the launch time
-            launchTime = Planetarium.GetUniversalTime();
+            launchData_Time = Planetarium.GetUniversalTime();
 
             //Creating an orbitalFrame, saving the initial state...just like a gimbal
             orbitalPrograde = vessel.obt_velocity.normalized;
@@ -405,24 +375,24 @@ namespace BenjisHardwiredLogic
 
             //Needed to calculate the angle deviation when downrange distance gets bigger
             //The planets curves away as the vessel travels downrange distance => MORE ANGLE
-            launchSiteLat = vessel.latitude;
-            launchSiteLong = vessel.longitude;
+            launchData_SiteLat = vessel.latitude;
+            launchData_SiteLong = vessel.longitude;
 
-            markVector = FlightGlobals.Bodies[1].GetSurfaceNVector(launchSiteLat, launchSiteLong);
+            markVector = FlightGlobals.Bodies[1].GetSurfaceNVector(launchData_SiteLat, launchData_SiteLong);
             bodysCircumference = 2 * Math.PI * FlightGlobals.Bodies[1].Radius;
 
 
             //Calculate the "heading" the vessel needs to roll into, to end up at the desired inclination
             //Lower inclinations than the launch-site's are not possible 
-            if (desiredInclination <= Math.Abs(launchSiteLat))
-                azimuth = Math.Abs(launchSiteLat);
+            if (desiredInclination <= Math.Abs(launchData_SiteLat))
+                azimuth = Math.Abs(launchData_SiteLat);
             else
                 azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
             //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
             if (desiredOrbitalDirection == "Prograde")
             {
-                if (launchSiteLat < 0)
+                if (launchData_SiteLat < 0)
                     desiredHeading.y = (90 - azimuth);
                 else
                     desiredHeading.y = (90 + azimuth);
@@ -430,7 +400,7 @@ namespace BenjisHardwiredLogic
             //And turning it the other direction if launching retrograde
             else
             {
-                if (launchSiteLat < 0)
+                if (launchData_SiteLat < 0)
                     desiredHeading.y = (270 - azimuth);
                 else
                     desiredHeading.y = (270 + azimuth);
@@ -444,17 +414,23 @@ namespace BenjisHardwiredLogic
                 steerDragArray[i].z = 0;
             }
 
+            //vessel, pitch, heading, true means degree
+            ascentGuidance.Update(vessel, 90, 0, false);
+            vessel.targetObject = ascentGuidance;
+            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+
             StartCoroutine(coroutineSteeringMeasurements());
-            StartCoroutine(coroutineWaitForRollManeuver());
+            StartCoroutine(coroutineCalculateAutoAscent());
 
             vessel.OnFlyByWire += steeringMeasurements;
-            vessel.OnFlyByWire += steeringStraightUp;
+            vessel.OnFlyByWire += steeringCommands;
 
         }
 
         //This coroutine will use the data collected by steeringMeasurements and calculate the actual "dragyness"/effectiveness of the gimbaling/steering
         private IEnumerator coroutineSteeringMeasurements()
         {
+            activeCoroutine = 1;
             for (; ; )
             {
                 //Add up all the values in the array...
@@ -495,88 +471,65 @@ namespace BenjisHardwiredLogic
                 steerDrag.x /= jX;
                 steerDrag.y /= jY;
                 steerDrag.z /= jZ;
-
+                
                 yield return new WaitForSeconds(.1f);
             }
         }
 
-        //The roll maneuver rolls the rockets bottom to the horizon
-        //-> The rocket's directions of pitch will match the gravity...
-        //...and rocket's yaw will correspond to inclination, so we can get into the correct azimuth
-        private IEnumerator coroutineWaitForRollManeuver()
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        private IEnumerator coroutineCalculateAutoAscent()
         {
             activeCoroutine = 1;
             for (; ; )
             {
-                if (vessel.verticalSpeed >= 10)
-                {
-                    vessel.OnFlyByWire -= steeringStraightUp;
-                    //Negative, because the auto-steering will try to end up at 0°.
-                    sumOfAngulars.y = -desiredHeading.y;
-                    vessel.OnFlyByWire += steeringRollManeuver;
 
-                    StartCoroutine(coroutineWaitForGravTurn());
-                    StopCoroutine(coroutineWaitForRollManeuver());
-                    yield break;
+                //Calculating at what angular difference to 0 the counter steering needs to happen
+                pointToTurn.x = 0;
+                pointToTurn.y = 0;
+                pointToTurn.z = 0;
+
+                if (steerDrag.x != 0)
+                {
+                    for (double d = Math.Abs(vessel.angularVelocityD.x); d > 0; d -= steerDrag.x)
+                    {
+                        pointToTurn.x += d;
+                    }
+                }
+                if (steerDrag.y != 0)
+                {
+                    for (double d = Math.Abs(vessel.angularVelocityD.y); d > 0; d -= steerDrag.y)
+                    {
+                        pointToTurn.y += d;
+                    }
+                }
+                if (steerDrag.z != 0)
+                {
+                    for (double d = Math.Abs(vessel.angularVelocityD.z); d > 0; d -= steerDrag.z)
+                    {
+                        pointToTurn.z += d;
+                    }
                 }
 
-                yield return new WaitForSeconds(.1f);
-            }
-        }
+                //FOR NOW:
+                //Multiplying by a factor of 1.5 to account for latency and atmospheric drag
+                //Let's see if it needs adjustment at some point
+                if (sumOfAngulars.x >= 0)
+                    pointToTurn.x *= -1.5;
+                else
+                    pointToTurn.x *= 1.5;
 
-        //Calculate and follow the first segment of the gravity turn
-        private IEnumerator coroutineWaitForGravTurn()
-        {
-            activeCoroutine = 2;
-            for (; ; )
-            {
-                if (vessel.verticalSpeed >= 125)
-                {
-                    //Set the ascent guidance marker as target
-                    FlightGlobals.fetch.SetVesselTarget(ascentGuidance, vessel);
+                if (sumOfAngulars.y >= 0)
+                    pointToTurn.y *= -1.5;
+                else
+                    pointToTurn.y *= 1.5;
 
-                    vessel.OnFlyByWire += steeringGravityTurn;
-                    vessel.OnFlyByWire -= steeringRollManeuver;
+                if (sumOfAngulars.z >= 0)
+                    pointToTurn.z *= -1.5;
+                else
+                    pointToTurn.z *= 1.5;
 
-                    //Follow the target (which is hopefully the ascent curve)
-                    vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+                steerStrengthFactor = HelperFunctions.limit(1000 * Math.Pow(launchData_Altitude - vessel.orbit.altitude, -1), 0.1, 1000);
 
-                    StartCoroutine(coroutineWaitForCoasting());
-                    StartCoroutine(coroutineCalculateGravityTurn());
-                    StopCoroutine(coroutineWaitForGravTurn());
-                    yield break;
-                }
-
-                yield return new WaitForSeconds(.1f);
-            }
-        }
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private IEnumerator coroutineWaitForCoasting()
-        {
-            activeCoroutine = 3;
-            for (; ; )
-            {
-
-                if (vessel.orbit.altitude > 10000000)
-                {
-                    vessel.OnFlyByWire -= steeringGravityTurn;
-                    vessel.OnFlyByWire += steeringLeveledFlight;
-                    //endMod();
-                    StopCoroutine(coroutineWaitForCoasting());
-                    StopCoroutine(coroutineCalculateGravityTurn());
-                    yield break;
-                }
-
-                yield return new WaitForSeconds(.1f);
-            }
-        }
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private IEnumerator coroutineCalculateGravityTurn()
-        {
-            for (; ; )
-            {
                 //Calculating the desired pitch to follow
                 //The gravity curve is made up of three different functions to keep things "simple"
                 double x = vessel.orbit.altitude / 1000.0d;
@@ -588,7 +541,7 @@ namespace BenjisHardwiredLogic
                 else
                     desiredHeading.x = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
 
-
+                /*
                 //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
                 Vector3d vesselVector = vessel.CoM - FlightGlobals.Bodies[1].transform.position;
                 downrangeDistance = (FlightGlobals.Bodies[1].Radius * HelperFunctions.radAngle(markVector, vesselVector));
@@ -597,16 +550,16 @@ namespace BenjisHardwiredLogic
 
                 //Add it up
                 desiredHeading.x = desiredHeading.x + angleCorrection;
+                */
 
-
-                AKTUELLER SCHEISS
+                //AKTUELLER SCHEISS
 
                 //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
-                //vessel, pitch, heading, false=degree
-                ascentGuidance.Update(vessel, 90, 90, false);
-
-
-                yield return new WaitForSeconds(.1f);
+                //vessel, pitch, heading, true means degree
+                ascentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
+                //Debug.Log((90 - desiredHeading.x));
+                
+                yield return new WaitForSeconds(.05f);
             }
         }
 
@@ -618,6 +571,7 @@ namespace BenjisHardwiredLogic
                 //Now to check if we are not on the launch pad
                 if (vessel.situation != Vessel.Situations.PRELAUNCH)
                 {
+                    /*
                     //Time to announce the upcoming ignition event
                     if (nextMessageStep == 0 && activeCoroutine == 1)
                     {
@@ -630,6 +584,7 @@ namespace BenjisHardwiredLogic
                         nextMessageStep++;
                         yield break;
                     }
+                    */
                 }
 
                 yield return new WaitForSeconds(1.2f);
@@ -646,6 +601,7 @@ namespace BenjisHardwiredLogic
 
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = false;
+                Fields[nameof(desiredRoll)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
 
                 //Update the size of the PAW
@@ -659,9 +615,8 @@ namespace BenjisHardwiredLogic
         private void isDead(Part part)
         {
             //Stopping all the coroutines that might be running
-            StopCoroutine(coroutineWaitForRollManeuver());
-            StopCoroutine(coroutineWaitForGravTurn());
-            StopCoroutine(coroutineWaitForCoasting());
+            StopCoroutine(coroutineSteeringMeasurements());
+            StopCoroutine(coroutineCalculateAutoAscent());
             StopCoroutine(coroutinePrintMessage());
         }
 
