@@ -109,11 +109,15 @@ namespace BenjisHardwiredLogic
         private double launchData_Altitude;
 
         //[KSPField(isPersistant = true, guiActive = false)]
-        private DirectionTarget ascentGuidance = new DirectionTarget("ascentGuidance");
+        private DirectionTarget directionAscentGuidance = new DirectionTarget("directionAscentGuidance");
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //private DirectionTarget directionParallel2Tangent = new DirectionTarget("directionParallel2Tangent");
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //private DirectionTarget direction90Deg2Tangent = new DirectionTarget("direction90Deg2Tangent");
 
-       //The PAW fields in the editor
-       //A button to enable or disable the module
-       [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        //The PAW fields in the editor
+        //A button to enable or disable the module
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
         //Specify the inclination you wanna end up at
@@ -124,10 +128,14 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Orbital Direction", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_ChooseOption(options = new string[2] { "Prograde", "Retrograde" })]
         private string desiredOrbitalDirection = "Prograde";
-        //Set the orbit pro- or retrograde
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "AutoAscent's Roll:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        //Execute a roll and keep the horizon leveled during ascent
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Roll Maneuver:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
         private bool desiredRoll = true;
+        //Just follow the ascent guidance or try to match the flight path as exactly as possible
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Corrective Steering:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
+        private bool correctiveSteering = false;
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
@@ -327,6 +335,7 @@ namespace BenjisHardwiredLogic
                 Fields[nameof(desiredInclination)].guiActiveEditor = true;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = true;
                 Fields[nameof(desiredRoll)].guiActiveEditor = true;
+                Fields[nameof(correctiveSteering)].guiActiveEditor = true;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
             }
             else
@@ -338,6 +347,7 @@ namespace BenjisHardwiredLogic
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = false;
                 Fields[nameof(desiredRoll)].guiActiveEditor = false;
+                Fields[nameof(correctiveSteering)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
             }
 
@@ -415,9 +425,12 @@ namespace BenjisHardwiredLogic
             }
 
             //vessel, pitch, heading, true means degree
-            ascentGuidance.Update(vessel, 90, 0, false);
-            vessel.targetObject = ascentGuidance;
+            directionAscentGuidance.Update(vessel, 90, 0, false);
+            vessel.targetObject = directionAscentGuidance;
             vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+
+            //directionParallel2Tangent.Update(vessel, 90, 0, false);
+            //direction90Deg2Tangent.Update(vessel, 0, 0, false);
 
             StartCoroutine(coroutineSteeringMeasurements());
             StartCoroutine(coroutineCalculateAutoAscent());
@@ -552,13 +565,15 @@ namespace BenjisHardwiredLogic
                 desiredHeading.x = desiredHeading.x + angleCorrection;
                 */
 
-                //AKTUELLER SCHEISS
+                if (!correctiveSteering)
+                {
+                    //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
+                    //vessel, pitch, heading, true means degree
+                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
+                }
 
-                //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
-                //vessel, pitch, heading, true means degree
-                ascentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
-                //Debug.Log((90 - desiredHeading.x));
-                
+                ScreenMessages.PostScreenMessage("AG - HOR: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalNormal), 0.5f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("AG - SKY: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalPrograde), 0.5f, ScreenMessageStyle.UPPER_RIGHT);
                 yield return new WaitForSeconds(.05f);
             }
         }
@@ -602,6 +617,7 @@ namespace BenjisHardwiredLogic
                 Fields[nameof(desiredInclination)].guiActiveEditor = false;
                 Fields[nameof(desiredOrbitalDirection)].guiActiveEditor = false;
                 Fields[nameof(desiredRoll)].guiActiveEditor = false;
+                Fields[nameof(correctiveSteering)].guiActiveEditor = false;
                 Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
 
                 //Update the size of the PAW
