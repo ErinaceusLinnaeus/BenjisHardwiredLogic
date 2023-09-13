@@ -82,9 +82,11 @@
     <PostBuildEvent>//BenjisHardwiredLogic.dll
 //delete old files
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.dll"
 //copy new files
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
@@ -92,9 +94,11 @@ copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameDa
 //delete old files
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 //copy new files
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
 //CHANGELOG.md
@@ -102,11 +106,13 @@ copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHar
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 del /f "$(ProjectDir)..\CHANGELOG.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\CHANGELOG.md"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\CHANGELOG.md"
 //copy new files
 copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "$(ProjectDir)..\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
 //README.md
@@ -114,31 +120,37 @@ copy "$(ProjectDir)Properties\CHANGELOG.md" "A:\Spiele\KSP Stock\GameData\Benjis
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\README.md"
 del /f "$(ProjectDir)..\README.md"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\README.md"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\README.md"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\README.md"
 //copy new files
 copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\README.md" "$(ProjectDir)..\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\README.md" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
 //BenjisHardwiredWayToOrbit.pdf
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredWayToOrbit.pdf"
 //copy new files
 copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\BenjisHardwiredWayToOrbit.pdf" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
 
 //BenjisHardwiredLogic.version
 //delete old files
 del /f "$(ProjectDir)..\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
 del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
+del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
 del /f "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.version"
 //copy new files
 copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)Properties\BenjisHardwiredLogic.version" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>
