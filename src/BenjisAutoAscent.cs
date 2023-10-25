@@ -588,6 +588,194 @@ namespace BenjisHardwiredLogic
             }
         }
 
+        void DRAW()
+        {
+            ScreenMessages.PostScreenMessage("LineDrawing active", 0.1f, ScreenMessageStyle.UPPER_CENTER);
+
+            Vector3 startingPoint = vessel.CoM;
+
+            /////////////AIR-PROGRADE LINE/////////////////////
+            ///
+            var obj3 = new GameObject("AirPrograde");
+            var airline = obj3.AddComponent<LineRenderer>();
+            Destroy(airline, 0.05f);
+            obj3.transform.parent = gameObject.transform;
+            obj3.transform.localPosition = Vector3.zero;
+
+            airline.sortingLayerName = "OnTop";
+            airline.sortingOrder = 5;
+            //line.positionCount(1);
+            Vector3 endPoint = vessel.CoM + 2 * (vessel.srf_velocity.normalized);
+            airline.SetPosition(0, startingPoint);
+            airline.SetPosition(1, endPoint);
+            airline.startWidth = 0.05f;
+            airline.endWidth = 0.01f;
+            airline.useWorldSpace = true;
+
+            Material LineMaterial3 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            airline.material = LineMaterial3;
+
+            Gradient gradient3 = new Gradient();
+            Color orange = new Color(1.0f, 0.64f, 0.0f);
+            gradient3.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(orange, 0.0f), new GradientColorKey(orange, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            airline.colorGradient = gradient3;
+
+            /////////////VAC-PROGRADE LINE/////////////////////
+
+            var obj4 = new GameObject("VacuumPrograde");
+            var vacline = obj4.AddComponent<LineRenderer>();
+            Destroy(vacline, 0.05f);
+            obj4.transform.parent = gameObject.transform;
+            obj4.transform.localPosition = Vector3.zero;
+
+            vacline.sortingLayerName = "OnTop";
+            vacline.sortingOrder = 5;
+            //line.positionCount(1);
+            endPoint = vessel.CoM + 2 * (vessel.obt_velocity.normalized);
+            vacline.SetPosition(0, startingPoint);
+            vacline.SetPosition(1, endPoint);
+            vacline.startWidth = 0.05f;
+            vacline.endWidth = 0.01f;
+            vacline.useWorldSpace = true;
+
+            Material LineMaterial4 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            vacline.material = LineMaterial4;
+
+            Gradient gradient4 = new Gradient();
+            gradient4.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(Color.red, 0.0f), new GradientColorKey(Color.red, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            vacline.colorGradient = gradient4;
+
+            /////////////TARGET LINE/////////////////////
+
+            var obj5 = new GameObject("TARGET");
+            var tarline = obj5.AddComponent<LineRenderer>();
+            Destroy(tarline, 0.05f);
+            obj5.transform.parent = gameObject.transform;
+            obj5.transform.localPosition = Vector3.zero;
+
+            tarline.sortingLayerName = "OnTop";
+            tarline.sortingOrder = 5;
+            //line.positionCount(1);
+            endPoint = vessel.CoM + 2 * (directionAscentGuidance.direction.normalized);
+            tarline.SetPosition(0, startingPoint);
+            tarline.SetPosition(1, endPoint);
+            tarline.startWidth = 0.05f;
+            tarline.endWidth = 0.01f;
+            tarline.useWorldSpace = true;
+
+            Material LineMaterial5 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            tarline.material = LineMaterial5;
+
+            Gradient gradient5 = new Gradient();
+            gradient5.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            tarline.colorGradient = gradient5;
+
+            /////////////ORB-PROGRADE LINE/////////////////////
+            /*
+            var obj0 = new GameObject("orbitalPrograde");
+            var orbproline = obj0.AddComponent<LineRenderer>();
+            Destroy(orbproline, 0.05f);
+            obj0.transform.parent = gameObject.transform;
+            obj0.transform.localPosition = Vector3.zero;
+
+            orbproline.sortingLayerName = "OnTop";
+            orbproline.sortingOrder = 5;
+            //line.positionCount(1);
+            endPoint = vessel.CoM + orbitalPrograde;
+            orbproline.SetPosition(0, startingPoint);
+            orbproline.SetPosition(1, endPoint);
+            orbproline.startWidth = 0.05f;
+            orbproline.endWidth = 0.01f;
+            orbproline.useWorldSpace = true;
+
+            Material LineMaterial0 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            orbproline.material = LineMaterial0;
+
+            Gradient gradient0 = new Gradient();
+            gradient0.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(Color.yellow, 0.0f), new GradientColorKey(Color.yellow, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            orbproline.colorGradient = gradient0;
+
+            /////////////ORB-NORMAL LINE/////////////////////
+
+            var obj1 = new GameObject("orbitalNormal");
+            var orbnorline = obj1.AddComponent<LineRenderer>();
+            Destroy(orbnorline, 0.05f);
+            obj1.transform.parent = gameObject.transform;
+            obj1.transform.localPosition = Vector3.zero;
+
+            orbnorline.sortingLayerName = "OnTop";
+            orbnorline.sortingOrder = 5;
+            //line.positionCount(1);
+            endPoint = vessel.CoM + orbitalNormal;
+            orbnorline.SetPosition(0, startingPoint);
+            orbnorline.SetPosition(1, endPoint);
+            orbnorline.startWidth = 0.05f;
+            orbnorline.endWidth = 0.01f;
+            orbnorline.useWorldSpace = true;
+
+            Material LineMaterial1 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            orbnorline.material = LineMaterial1;
+
+            Gradient gradient1 = new Gradient();
+            gradient1.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(Color.cyan, 0.0f), new GradientColorKey(Color.cyan, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            orbnorline.colorGradient = gradient1;
+
+            /////////////ORB-TANGENT LINE/////////////////////
+
+            var obj2 = new GameObject("orbitalRadial");
+            var orbradline = obj2.AddComponent<LineRenderer>();
+            Destroy(orbradline, 0.05f);
+            obj1.transform.parent = gameObject.transform;
+            obj1.transform.localPosition = Vector3.zero;
+
+            orbradline.sortingLayerName = "OnTop";
+            orbradline.sortingOrder = 5;
+            //line.positionCount(1);
+            endPoint = vessel.CoM + orbitalRadial;
+            orbradline.SetPosition(0, startingPoint);
+            orbradline.SetPosition(1, endPoint);
+            orbradline.startWidth = 0.05f;
+            orbradline.endWidth = 0.01f;
+            orbradline.useWorldSpace = true;
+
+            Material LineMaterial2 = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply"));
+            orbradline.material = LineMaterial2;
+
+            Gradient gradient2 = new Gradient();
+            gradient2.SetKeys
+                (
+                new GradientColorKey[] { new GradientColorKey(Color.magenta, 0.0f), new GradientColorKey(Color.magenta, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+
+            orbradline.colorGradient = gradient2;
+            */
+        }
         //This function will write all the messages on the screen
         private IEnumerator coroutinePrintMessage()
         {
