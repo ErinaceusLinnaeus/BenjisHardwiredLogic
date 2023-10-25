@@ -484,7 +484,7 @@ namespace BenjisHardwiredLogic
                 steerDrag.x /= jX;
                 steerDrag.y /= jY;
                 steerDrag.z /= jZ;
-                
+
                 yield return new WaitForSeconds(.1f);
             }
         }
@@ -549,10 +549,14 @@ namespace BenjisHardwiredLogic
 
                 if (vessel.orbit.altitude <= 10075)
                     desiredHeading.x = (0.014013 * (x * x * x)) - (0.448716 * (x * x)) + (5.730697 * x) + 0.32134;
-                else if (vessel.orbit.altitude > 10075 && vessel.orbit.altitude < 97800)
+                else if (vessel.orbit.altitude > 10075 && vessel.orbit.altitude <= 97800)
                     desiredHeading.x = (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515;
-                else
+                else if (vessel.orbit.altitude > 97800 && vessel.orbit.altitude < 250000)
                     desiredHeading.x = -(0.000889 * (x * x)) + (0.456161 * x) + 31.754229;
+                else
+                    desiredHeading.x = 90;
+
+                //The graph on desmos: https://www.desmos.com/calculator/xf4focqsec
 
                 /*
                 //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
@@ -565,15 +569,21 @@ namespace BenjisHardwiredLogic
                 desiredHeading.x = desiredHeading.x + angleCorrection;
                 */
 
-                if (!correctiveSteering)
+                //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
+                //vessel, pitch, heading, true means degree
+                directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);// desiredHeading.y, true);
+
+                if (correctiveSteering)
                 {
                     //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
                     //vessel, pitch, heading, true means degree
-                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
+                    //directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
                 }
 
-                ScreenMessages.PostScreenMessage("AG - HOR: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalNormal), 0.5f, ScreenMessageStyle.UPPER_LEFT);
-                ScreenMessages.PostScreenMessage("AG - SKY: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalPrograde), 0.5f, ScreenMessageStyle.UPPER_RIGHT);
+                DRAW();
+
+                //ScreenMessages.PostScreenMessage("AG - HOR: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalNormal), 0.5f, ScreenMessageStyle.UPPER_LEFT);
+                //ScreenMessages.PostScreenMessage("AG - SKY: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalPrograde), 0.5f, ScreenMessageStyle.UPPER_RIGHT);
                 yield return new WaitForSeconds(.05f);
             }
         }
