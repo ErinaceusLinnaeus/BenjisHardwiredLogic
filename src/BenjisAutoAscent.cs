@@ -557,7 +557,7 @@ namespace BenjisHardwiredLogic
                 else
                     desiredHeading.x = 90;
 
-                //The graph on desmos: https://www.desmos.com/calculator/xf4focqsec
+                //The graph on desmos: https://www.desmos.com/calculator/acq2muuqyq
 
                 /*
                 //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
@@ -572,10 +572,15 @@ namespace BenjisHardwiredLogic
 
                 uncorrecteddirectionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
                 DebugLines.draw(vessel, "uncorrectedTarget", uncorrecteddirectionAscentGuidance.direction, Color.blue);
-
+                
                 if (correctiveSteering && vessel.srfSpeed > 30)
                 {
-                    double correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -5, 5);
+                    double maxSteerCorrection = Math.Pow(1.1, (45 - vessel.dynamicPressurekPa)) - 12;
+                    //The graph on desmos: https://www.desmos.com/calculator/ylfkjhhf8i
+                    //MaxQ usually between 15 and 20
+
+                    double correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
+                    
                     //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
                     //vessel, pitch, heading, true means degree
                     directionAscentGuidance.Update(vessel, (90 - desiredHeading.x - correctiveAngle), desiredHeading.y, true);
@@ -597,7 +602,7 @@ namespace BenjisHardwiredLogic
                 DebugLines.draw(vessel, "Target", directionAscentGuidance.direction, lightblue);
 
                 
-                ScreenMessages.PostScreenMessage("Airstream - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                //ScreenMessages.PostScreenMessage("Airstream - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
                 //ScreenMessages.PostScreenMessage("VacProgra - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
 
                 //ScreenMessages.PostScreenMessage("Airstream - Radial: " + HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), 0.4f, ScreenMessageStyle.UPPER_CENTER);
