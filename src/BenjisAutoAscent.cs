@@ -110,6 +110,7 @@ namespace BenjisHardwiredLogic
 
         //[KSPField(isPersistant = true, guiActive = false)]
         private DirectionTarget directionAscentGuidance = new DirectionTarget("directionAscentGuidance");
+        private DirectionTarget uncorrecteddirectionAscentGuidance = new DirectionTarget("uncorrecteddirectionAscentGuidance");
         //[KSPField(isPersistant = true, guiActive = false)]
         //private DirectionTarget directionParallel2Tangent = new DirectionTarget("directionParallel2Tangent");
         //[KSPField(isPersistant = true, guiActive = false)]
@@ -569,31 +570,46 @@ namespace BenjisHardwiredLogic
                 desiredHeading.x = desiredHeading.x + angleCorrection;
                 */
 
-                //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
-                //vessel, pitch, heading, true means degree
-                directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);// desiredHeading.y, true);
+                uncorrecteddirectionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
+                DebugLines.draw(vessel, "uncorrectedTarget", uncorrecteddirectionAscentGuidance.direction, Color.blue);
 
-                if (correctiveSteering)
+                if (correctiveSteering && vessel.srfSpeed > 30)
+                {
+                    double correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -5, 5);
+                    //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
+                    //vessel, pitch, heading, true means degree
+                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x - correctiveAngle), desiredHeading.y, true);
+                }
+                else
                 {
                     //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
                     //vessel, pitch, heading, true means degree
-                    //directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), 0, true);// desiredHeading.y, true);
+                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
                 }
 
                 //Draw some Debuglines
                 Color orange = new Color(1.0f, 0.64f, 0.0f);
+                Color lightblue = new Color(0.67f, 0.84f, 0.9f);
 
                 //vessel directions
                 DebugLines.draw(vessel, "AirPrograde", vessel.srf_velocity, orange);
                 DebugLines.draw(vessel, "VacuumPrograde", vessel.obt_velocity, Color.red);
-                DebugLines.draw(vessel, "Target", directionAscentGuidance.direction, Color.white);
+                DebugLines.draw(vessel, "Target", directionAscentGuidance.direction, lightblue);
+
+                
+                ScreenMessages.PostScreenMessage("Airstream - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                //ScreenMessages.PostScreenMessage("VacProgra - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
+
+                //ScreenMessages.PostScreenMessage("Airstream - Radial: " + HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), 0.4f, ScreenMessageStyle.UPPER_CENTER);
+                //ScreenMessages.PostScreenMessage("Target - Radial: " + HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
+
 
                 //orbital directions at the launchsite
-                /*
-                DebugLines.draw(vessel, "LaunchSite_orbitalPrograde", orbitalPrograde, Color.yellow);
-                DebugLines.draw(vessel, "LaunchSite_orbitalNormal", orbitalNormal, Color.cyan);
+
+                //DebugLines.draw(vessel, "LaunchSite_orbitalPrograde", orbitalPrograde, Color.yellow);
+                //DebugLines.draw(vessel, "LaunchSite_orbitalNormal", orbitalNormal, Color.cyan);
                 DebugLines.draw(vessel, "LaunchSite_orbitalRadial", orbitalRadial, Color.magenta);
-                */
+                
 
 
                 //ScreenMessages.PostScreenMessage("AG - HOR: " + HelperFunctions.degAngle(directionAscentGuidance.GetFwdVector(), orbitalNormal), 0.5f, ScreenMessageStyle.UPPER_LEFT);
