@@ -575,12 +575,24 @@ namespace BenjisHardwiredLogic
                 
                 if (correctiveSteering && vessel.srfSpeed > 30)
                 {
+                    ScreenMessages.PostScreenMessage("dyn-pressure: " + vessel.dynamicPressurekPa, 0.4f, ScreenMessageStyle.UPPER_LEFT);
                     double maxSteerCorrection = Math.Pow(1.1, (45 - vessel.dynamicPressurekPa)) - 12;
                     //The graph on desmos: https://www.desmos.com/calculator/ylfkjhhf8i
                     //MaxQ usually between 15 and 20
 
-                    double correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
-                    
+                    //switch to orbital prograde
+                    double correctiveAngle = 0;
+                    if (vessel.dynamicPressurekPa < 0.5 && vessel.orbit.altitude > 30000)
+                    {
+                        maxSteerCorrection = HelperFunctions.limit(maxSteerCorrection, -HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity), HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity));
+                        correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.obt_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
+                    }
+                    else
+                    {
+                        maxSteerCorrection = HelperFunctions.limit(maxSteerCorrection, -HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity));
+                        correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
+                    }
+
                     //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
                     //vessel, pitch, heading, true means degree
                     directionAscentGuidance.Update(vessel, (90 - desiredHeading.x - correctiveAngle), desiredHeading.y, true);
