@@ -11,7 +11,7 @@ namespace BenjisHardwiredLogic
 
             line.sortingLayerName = "OnTop";
             line.sortingOrder = 5;
-            Vector3 endPoint = vessel.CoM + 3 * (pointingAt.normalized);
+            Vector3 endPoint = vessel.CoM + 5 * (pointingAt.normalized);
             line.SetPosition(0, vessel.CoM);
             line.SetPosition(1, endPoint);
             line.startWidth = 0.05f;
