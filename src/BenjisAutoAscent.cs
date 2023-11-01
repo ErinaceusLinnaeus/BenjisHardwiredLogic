@@ -404,17 +404,17 @@ namespace BenjisHardwiredLogic
             if (desiredOrbitalDirection == "Prograde")
             {
                 if (launchData_SiteLat < 0)
-                    desiredHeading.y = (90 - azimuth);
+                    desiredHeading.z = (90 - azimuth);
                 else
-                    desiredHeading.y = (90 + azimuth);
+                    desiredHeading.z = (90 + azimuth);
             }
             //And turning it the other direction if launching retrograde
             else
             {
                 if (launchData_SiteLat < 0)
-                    desiredHeading.y = (270 - azimuth);
+                    desiredHeading.z = (270 - azimuth);
                 else
-                    desiredHeading.y = (270 + azimuth);
+                    desiredHeading.z = (270 + azimuth);
             }
 
             //Setting all the elemts of the Drag Array to zero
@@ -586,21 +586,20 @@ namespace BenjisHardwiredLogic
                     {
                         maxSteerCorrection = HelperFunctions.limit(maxSteerCorrection, -HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity), HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity));
                         correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.obt_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
+                        directionAscentGuidance.Update(vessel, (90 - desiredHeading.x - correctiveAngle), desiredHeading.z, true);
                     }
                     else
                     {
                         maxSteerCorrection = HelperFunctions.limit(maxSteerCorrection, -HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity));
                         correctiveAngle = HelperFunctions.limit(HelperFunctions.degAngle(directionAscentGuidance.direction, orbitalRadial) - HelperFunctions.degAngle(vessel.srf_velocity, orbitalRadial), -maxSteerCorrection, maxSteerCorrection);
+                        directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.z, true);
                     }
 
                     //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
                     //vessel, pitch, heading, true means degree
-                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x - correctiveAngle), desiredHeading.y, true);
                 }
                 else
                 {
-                    //https://www.kerbalspaceprogram.com/ksp/api/class_direction_target.html
-                    //vessel, pitch, heading, true means degree
                     directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
                 }
 
