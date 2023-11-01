@@ -570,7 +570,9 @@ namespace BenjisHardwiredLogic
                 desiredHeading.x = desiredHeading.x + angleCorrection;
                 */
 
-                uncorrecteddirectionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
+
+                //Where the vessel would be pointing without corrective steering
+                uncorrecteddirectionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.z, true);
                 DebugLines.draw(vessel, "uncorrectedTarget", uncorrecteddirectionAscentGuidance.direction, Color.blue);
                 
                 if (correctiveSteering && vessel.srfSpeed > 30)
@@ -600,7 +602,7 @@ namespace BenjisHardwiredLogic
                 }
                 else
                 {
-                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.y, true);
+                    directionAscentGuidance.Update(vessel, (90 - desiredHeading.x), desiredHeading.z, true);
                 }
 
                 //Draw some Debuglines
