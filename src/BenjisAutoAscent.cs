@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using VehiclePhysics;
 
 namespace BenjisHardwiredLogic
 {
@@ -24,6 +25,16 @@ namespace BenjisHardwiredLogic
         // 80.000 m < ALT < 240.000 m :   -(0.000889 * (x*x)) + (0.456161 * x) + 31.754229
 
         #region Fields
+
+
+        //TEMPTEMPTEMPTEMPTEMP//
+        [KSPField(isPersistant = true, guiActive = true)]
+        double rollPlaneVector_shipLeft;
+        [KSPField(isPersistant = true, guiActive = true)]
+        double rollPlaneVector_shipBelly;
+        [KSPField(isPersistant = true, guiActive = true)]
+        double VECVECsteering;
+
 
         //Colors
         Color orange = new Color(1.0f, 0.64f, 0.0f);
@@ -397,6 +408,7 @@ namespace BenjisHardwiredLogic
                 //launching towards north
                 if (launchData_SiteLat < 0)
                 {
+                    desiredHeading.y = azimuth;
                     desiredHeading.z = (90 - azimuth);
                 }
                 //launching towards south
@@ -412,6 +424,7 @@ namespace BenjisHardwiredLogic
                 //launching towards north
                 if (launchData_SiteLat < 0)
                 {
+                    desiredHeading.y = 180 - azimuth;
                     desiredHeading.z = (270 - azimuth);
                 }
                 //launching towards south
@@ -421,6 +434,7 @@ namespace BenjisHardwiredLogic
                     desiredHeading.z = (270 + azimuth);
                 }
             }
+
 
             //Setting all the elemts of the Drag Array to zero
             for (int i = 0; i < steerDragArray.Length; i++)
@@ -475,8 +489,19 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 1;
             for (; ; )
             {
+                /*
                 shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
                 shipBelly = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(90, 0, 0) * Vector3d.up).normalized;
+
+                Vector3d rollPlane = Vector3d.Cross(shipLeft, shipBelly);
+                rollPlaneVector = Vector3.ProjectOnPlane(launchsiteNormal, rollPlane);
+                */
+                shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
+                shipBelly = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(90, 0, 0) * Vector3d.up).normalized;
+
+                //LaunchSite sits north of the equator -> launching south
+                if (launchData_SiteLat >= 0)
+                    shipLeft = - shipLeft;
 
                 Vector3d rollPlane = Vector3d.Cross(shipLeft, shipBelly);
                 rollPlaneVector = Vector3.ProjectOnPlane(launchsiteNormal, rollPlane);
@@ -608,6 +633,10 @@ namespace BenjisHardwiredLogic
                 DebugLines.draw(vessel, "shipBelly", shipBelly, Color.white);
 
                 DebugLines.draw(vessel, "rollPlaneVector", rollPlaneVector, Color.cyan);
+
+                rollPlaneVector_shipLeft = HelperFunctions.degAngle(rollPlaneVector, shipLeft);
+                rollPlaneVector_shipBelly = HelperFunctions.degAngle(rollPlaneVector, shipBelly);
+                VECVECsteering = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVector, shipLeft));
 
                 ScreenMessages.PostScreenMessage("rollPlaneVector-shipLeft: " + HelperFunctions.degAngle(rollPlaneVector, shipLeft), 0.4f, ScreenMessageStyle.UPPER_CENTER);
                 ScreenMessages.PostScreenMessage("rollPlaneVector-shipBelly: " + HelperFunctions.degAngle(rollPlaneVector, shipBelly), 0.4f, ScreenMessageStyle.UPPER_LEFT);
