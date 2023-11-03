@@ -394,21 +394,33 @@ namespace BenjisHardwiredLogic
             //KSP Navball is weird. North is at 0°, but should be 90°. East at 90°but should be 0°. 
             if (desiredOrbitalDirection == "Prograde")
             {
+                //launching towards north
                 if (launchData_SiteLat < 0)
+                {
                     desiredHeading.z = (90 - azimuth);
+                }
+                //launching towards south
                 else
+                {
+                    desiredHeading.y = azimuth;
                     desiredHeading.z = (90 + azimuth);
+                }
             }
             //And turning it the other direction if launching retrograde
             else
             {
+                //launching towards north
                 if (launchData_SiteLat < 0)
+                {
                     desiredHeading.z = (270 - azimuth);
+                }
+                //launching towards south
                 else
+                {
+                    desiredHeading.y = 180 - azimuth;
                     desiredHeading.z = (270 + azimuth);
+                }
             }
-
-            desiredHeading.y = azimuth;
 
             //Setting all the elemts of the Drag Array to zero
             for (int i = 0; i < steerDragArray.Length; i++)
