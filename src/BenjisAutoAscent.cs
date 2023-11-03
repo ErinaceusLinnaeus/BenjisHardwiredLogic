@@ -30,22 +30,22 @@ namespace BenjisHardwiredLogic
         Color lightblue = new Color(0.67f, 0.84f, 0.9f);
 
         //Angles between orbital-radial at launchsite and the airstream at T=-1
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double Tm1AngleOrbitalAirstream = 0;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //private double Tm1AngleOrbitalAirstream = 0;
         //Angles between orbital-radial at launchsite and the airstream at t=0
         [KSPField(isPersistant = true, guiActive = false)]
         private double T0AngleOrbitalAirstream = 0;
 
         //Angles between orbital-radial at launchsite and the rocket's (vacuum) prograde at T=-1
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double tm1AngleOrbitalVacPro = 0;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //private double tm1AngleOrbitalVacPro = 0;
         //Angles between orbital-radial at launchsite and the rocket's (vacuum) prograde at t=0
         [KSPField(isPersistant = true, guiActive = false)]
         private double T0AngleOrbitalVacPro = 0;
 
         //Angles between orbital-radial at launchsite and the targeted ascent at T=-1
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double Tm1AngleOrbitalTarget = 0;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //private double Tm1AngleOrbitalTarget = 0;
         //Angles between orbital-radial at launchsite and the targeted ascent at t=0
         [KSPField(isPersistant = true, guiActive = false)]
         private double T0AngleOrbitalTarget = 0;
@@ -116,8 +116,6 @@ namespace BenjisHardwiredLogic
         private double launchData_SiteLat;
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchData_SiteLong;
-        [KSPField(isPersistant = true, guiActive = false)]
-        private double downrangeDistance;
 
         [KSPField(isPersistant = true, guiActive = false)]
         private Vector3d markVector;
@@ -429,9 +427,9 @@ namespace BenjisHardwiredLogic
             //direction90Deg2Tangent.Update(vessel, 0, 0, false);
 
             StartCoroutine(coroutineSteeringMeasurements());
-            StartCoroutine(coroutineCalculateAutoAscent());
+            //StartCoroutine(coroutineCalculateAutoAscent());
             StartCoroutine(coroutineUpdateVectors());
-            StartCoroutine(coroutineCalculateRollManeuver());
+            StartCoroutine(coroutineShowVectors());
             StartCoroutine(coroutineSteeringCheck());
 
             steeringMode = 0;
@@ -451,6 +449,7 @@ namespace BenjisHardwiredLogic
                 }
                 if (steeringMode == 1 && vessel.srfSpeed > 100) //THE GRAVITY TURN KICKS-IN A BIT VIOLENTLY
                 {
+                    StartCoroutine(coroutineCalculateAutoAscent());
                     vessel.OnFlyByWire -= steeringCommandRoll;
                     vessel.OnFlyByWire += steeringCommandGravityTurn;
                 }
@@ -464,7 +463,6 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 1;
             for (; ; )
             {
-
                 shipLeft = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(-90, 0, 0) * Vector3d.left).normalized;
                 shipBelly = (vessel.GetTransform().rotation * UnityEngine.Quaternion.Euler(90, 0, 0) * Vector3d.up).normalized;
 
@@ -520,63 +518,6 @@ namespace BenjisHardwiredLogic
                 steerDrag.y /= jY;
                 steerDrag.z /= jZ;
 
-                Tm1AngleOrbitalTarget = T0AngleOrbitalTarget;
-                Tm1AngleOrbitalAirstream = T0AngleOrbitalAirstream;
-                tm1AngleOrbitalVacPro = T0AngleOrbitalVacPro;
-
-                T0AngleOrbitalTarget = HelperFunctions.degAngle(directionAscentGuidance.direction, launchsiteRadial);
-                T0AngleOrbitalAirstream = HelperFunctions.degAngle(vessel.srf_velocity, launchsiteRadial);
-                T0AngleOrbitalVacPro = HelperFunctions.degAngle(vessel.obt_velocity, launchsiteRadial);
-
-
-                yield return new WaitForSeconds(.1f);
-            }
-        }
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private IEnumerator coroutineCalculateRollManeuver()
-        {
-            activeCoroutine = 1;
-            for (; ; )
-            {
-                //orbital directions at the launchsite
-
-                //DebugLines.draw(vessel, "launchsitePrograde", launchsitePrograde, Color.yellow);
-                //DebugLines.draw(vessel, "launchsiteNormal", launchsiteNormal, Color.cyan);
-                //DebugLines.draw(vessel, "launchsiteRadial", launchsiteRadial, Color.magenta);
-
-                DebugLines.draw(vessel, "shipLeft", shipLeft, Color.gray);
-                DebugLines.draw(vessel, "shipBelly", shipBelly, Color.white);
-
-                DebugLines.draw(vessel, "rollPlaneVector", rollPlaneVector, Color.cyan);
-
-                ScreenMessages.PostScreenMessage("rollPlaneVector-shipLeft: " + HelperFunctions.degAngle(rollPlaneVector, shipLeft), 0.4f, ScreenMessageStyle.UPPER_CENTER);
-                ScreenMessages.PostScreenMessage("rollPlaneVector-shipBelly: " + HelperFunctions.degAngle(rollPlaneVector, shipBelly), 0.4f, ScreenMessageStyle.UPPER_LEFT);
-                ScreenMessages.PostScreenMessage("steering: " + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVector, shipLeft)), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
-                
-                
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                ///TODO
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                //ROLL-MANEUVER:
-
-                // PROGRADE LAUNCH                                          RETROGRADE LAUNCH
-                // ANGLE BETWEEN LAUNCHSITENORMAL AND LEFT  = AZIMUTH         = 90-AZIMUTH
-                // ANGLE BETWEEN LAUNCHSITENORMAL AND BELLY = 90-AZIMUTH      = AZIMUTH
-
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                yield return new WaitForSeconds(.05f);
-            }
-        }
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        private IEnumerator coroutineCalculateAutoAscent()
-        {
-            activeCoroutine = 1;
-            for (; ; )
-            {
 
                 //Calculating at what angular difference to 0 the counter steering needs to happen
                 pointToTurn.x = 0;
@@ -625,6 +566,53 @@ namespace BenjisHardwiredLogic
 
                 steerStrengthFactor = HelperFunctions.limit(1000 * Math.Pow(launchData_Altitude - vessel.orbit.altitude, -1), 0.1, 1000);
 
+                /*
+                Tm1AngleOrbitalTarget = T0AngleOrbitalTarget;
+                Tm1AngleOrbitalAirstream = T0AngleOrbitalAirstream;
+                tm1AngleOrbitalVacPro = T0AngleOrbitalVacPro;
+                */
+                T0AngleOrbitalTarget = HelperFunctions.degAngle(directionAscentGuidance.direction, launchsiteRadial);
+                T0AngleOrbitalAirstream = HelperFunctions.degAngle(vessel.srf_velocity, launchsiteRadial);
+                T0AngleOrbitalVacPro = HelperFunctions.degAngle(vessel.obt_velocity, launchsiteRadial);
+                
+
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+        
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        private IEnumerator coroutineShowVectors()
+        {
+            activeCoroutine = 1;
+            for (; ; )
+            {
+                //orbital directions at the launchsite
+
+                //DebugLines.draw(vessel, "launchsitePrograde", launchsitePrograde, Color.yellow);
+                //DebugLines.draw(vessel, "launchsiteNormal", launchsiteNormal, Color.cyan);
+                //DebugLines.draw(vessel, "launchsiteRadial", launchsiteRadial, Color.magenta);
+
+                DebugLines.draw(vessel, "shipLeft", shipLeft, Color.gray);
+                DebugLines.draw(vessel, "shipBelly", shipBelly, Color.white);
+
+                DebugLines.draw(vessel, "rollPlaneVector", rollPlaneVector, Color.cyan);
+
+                ScreenMessages.PostScreenMessage("rollPlaneVector-shipLeft: " + HelperFunctions.degAngle(rollPlaneVector, shipLeft), 0.4f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage("rollPlaneVector-shipBelly: " + HelperFunctions.degAngle(rollPlaneVector, shipBelly), 0.4f, ScreenMessageStyle.UPPER_LEFT);
+                ScreenMessages.PostScreenMessage("steering: " + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVector, shipLeft)), 0.4f, ScreenMessageStyle.UPPER_RIGHT);
+                
+                yield return new WaitForSeconds(.05f);
+            }
+        }
+        
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        private IEnumerator coroutineCalculateAutoAscent()
+        {
+            activeCoroutine = 1;
+            for (; ; )
+            {
+
                 //Calculating the desired pitch to follow
                 //The gravity curve is made up of three different functions to keep things "simple"
                 double x = vessel.orbit.altitude / 1000.0d;
@@ -639,17 +627,6 @@ namespace BenjisHardwiredLogic
                     desiredHeading.x = 90;
 
                 //The graph on desmos: https://www.desmos.com/calculator/acq2muuqyq
-
-                /*
-                //Calculate the angle we need to add, because the Earth/Kerbin curves "down" as we travel downrange
-                Vector3d vesselVector = vessel.CoM - FlightGlobals.Bodies[1].transform.position;
-                downrangeDistance = (FlightGlobals.Bodies[1].Radius * HelperFunctions.radAngle(markVector, vesselVector));
-
-                double angleCorrection = ((downrangeDistance / bodysCircumference) * 360);
-
-                //Add it up
-                desiredHeading.x = desiredHeading.x + angleCorrection;
-                */
 
 
                 //Where the vessel would be pointing without corrective steering
