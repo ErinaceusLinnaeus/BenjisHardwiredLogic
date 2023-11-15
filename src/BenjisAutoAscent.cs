@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
-using VehiclePhysics;
 
 namespace BenjisHardwiredLogic
 {
@@ -27,21 +26,38 @@ namespace BenjisHardwiredLogic
         #region Fields
 
 
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //FullCircle fullCircle = new FullCircle();
+
+
         //TEMPTEMPTEMPTEMPTEMP//
-        [KSPField(isPersistant = true, guiActive = true)]
+        [KSPField(isPersistant = true, guiActive = false)]
         double rollPlaneVectorNorth_shipBelly_Previous;
         [KSPField(isPersistant = true, guiActive = true)]
         double rollPlaneVectorNorth_shipBelly;
-        [KSPField(isPersistant = true, guiActive = true)]
+        [KSPField(isPersistant = true, guiActive = false)]
         double rollPlaneVectorEast_shipBelly_Previous;
         [KSPField(isPersistant = true, guiActive = true)]
         double rollPlaneVectorEast_shipBelly;
-        [KSPField(isPersistant = true, guiActive = true)]
+        [KSPField(isPersistant = true, guiActive = false)]
         double VECVECsteeringNorth;
-        [KSPField(isPersistant = true, guiActive = true)]
+        [KSPField(isPersistant = true, guiActive = false)]
         double VECVECsteeringEast;
 
+
+
+
+        [KSPField(isPersistant = true, guiActive = true)]
+        double DEBUGazimuthdegree;
+        [KSPField(isPersistant = true, guiActive = true)]
+        double DEBUGshipdegree;
+        [KSPField(isPersistant = true, guiActive = true)]
+        double DEBUGshipazimuth;
+
+
+
         //In which direction to roll to get in to correct segment
+        [KSPField(isPersistant = true, guiActive = false)]
         int initialRollDirection = 0;
 
         //Colors
@@ -83,9 +99,8 @@ namespace BenjisHardwiredLogic
 
         //steeringModes
         //  1 : Initial Roll
-        //  2 : Roll over the equator
-        //  3 : Roll around the south
-        //  4 : Gravity Turn
+        //  2 : Roll Maneuver
+        //  3 : Gravity Turn
         [KSPField(isPersistant = true, guiActive = true)]
         int steeringMode;
 
@@ -264,21 +279,33 @@ namespace BenjisHardwiredLogic
         //All the steering happens here
         private void steeringCommand_InitialRoll(FlightCtrlState state)
         {
-            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)(initialRollDirection * 0.025);
-            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //            state.roll = (float)(initialRollDirection * 0.025);
+            //            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
         }
         private void steeringCommand_Roll(FlightCtrlState state)
         {
-            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
-            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
+            //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+        }
+        private void steeringCommand_Roll_SW(FlightCtrlState state) ///THIS IS NOT WORKING
+        {
+            //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
+            //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+        }
+        private void steeringCommand_Roll_NW(FlightCtrlState state)
+        {
+            //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            //            state.roll = -(float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
+            //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
         }
         private void steeringCommand_GravityTurn(FlightCtrlState state)
         {
             //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
             //state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (sumOfAngulars.y + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
-            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
+//            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly) + pointToTurn.y) * steerStrengthFactor)) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
             //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
 
         }
@@ -425,40 +452,55 @@ namespace BenjisHardwiredLogic
                 azimuth = HelperFunctions.radToDeg(Math.Acos((Math.Cos(HelperFunctions.degToRad(desiredInclination)) / Math.Cos(HelperFunctions.degToRad(Math.Abs(vessel.latitude))))));
 
 
+            //fullCircle.SetAzimuth(launchData_SiteLat, desiredOrbitalDirection, desiredInclination);
+            FullCircle.SetAzimuth(launchData_SiteLat, desiredOrbitalDirection, desiredInclination);
+
+
             //Find out which way to roll to get into the specific segment of the circle (NE, NW, SW, SE)
-            //LaunchSite is south of the equator => launching North
-            //if (launchData_SiteLat < 0)
-            //{
+            //LaunchSite is north of the equator => launching South
+            if (launchData_SiteLat >= 0)
+            {
                 //Prograde => E
                 if (desiredOrbitalDirection == "Prograde")
                 {
                     desiredHeading.y = azimuth;
-
-                    if (VECVECsteeringNorth - azimuth < VECVECsteeringEast)
+                    VECVECsteeringNorth = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly));
+                    VECVECsteeringEast = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly));
+                    // SE
+                    if (VECVECsteeringNorth - desiredHeading.y < VECVECsteeringEast) //OK
                     {
-                        initialRollDirection = -1;
-                    }
-                    else
-                    {
+                        ScreenMessages.PostScreenMessage("1) " + (VECVECsteeringNorth - azimuth) + " < " + VECVECsteeringEast, 10.4f, ScreenMessageStyle.UPPER_CENTER);
                         initialRollDirection = 1;
                     }
-                    steeringMode = 1;
+                    // NE
+                    else
+                    {
+                        ScreenMessages.PostScreenMessage("2) " + (VECVECsteeringNorth - azimuth) + " >= " + VECVECsteeringEast, 10.4f, ScreenMessageStyle.UPPER_CENTER);
+                        initialRollDirection = -1;
+                    }
                 }
                 //Retrograde => W
                 else
                 {
                     desiredHeading.y = 180 - azimuth;
+                    VECVECsteeringNorth = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly));
+                    VECVECsteeringEast = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly));
 
-                    if (VECVECsteeringNorth - azimuth < VECVECsteeringEast)
+                    // NW
+                    if (VECVECsteeringNorth - desiredHeading.y < VECVECsteeringEast)
                     {
+                        ScreenMessages.PostScreenMessage("3) " + (VECVECsteeringNorth - azimuth) + " < " + VECVECsteeringEast, 10.4f, ScreenMessageStyle.UPPER_CENTER);
                         initialRollDirection = -1;
                     }
-                    else
+                    // SW
+                    else //OK
                     {
+                        ScreenMessages.PostScreenMessage("4) " + (VECVECsteeringNorth - azimuth) + " >= " + VECVECsteeringEast, 10.4f, ScreenMessageStyle.UPPER_CENTER);
                         initialRollDirection = 1;
                     }
+                    steeringMode = 1;
                 }
-            //}
+            }
             //LaunchSite is north of the equator => launching South
             //else
             //{
@@ -538,8 +580,16 @@ namespace BenjisHardwiredLogic
             StartCoroutine(coroutineUpdateVectors());
             StartCoroutine(coroutineSteeringCheck());
 
-            vessel.OnFlyByWire += steeringCommand_InitialRoll;
-
+            if (correctiveSteering)
+            {
+                vessel.OnFlyByWire += steeringCommand_InitialRoll;
+                steeringMode = 1;
+            }
+            else
+            {
+                vessel.OnFlyByWire += steeringCommand_GravityTurn;
+                steeringMode = 3;
+            }
         }
 
         //This corourine will check which steering ist active and switch to the next when needed
@@ -548,18 +598,18 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 1;
             for (; ; )
             {
-                //NE
-                if (steeringMode == 1 && (rollPlaneVectorNorth_shipBelly < 90) && (rollPlaneVectorEast_shipBelly < 90))
+                if (steeringMode == 1 && Math.Abs(VECVECsteeringEast) < 10)
+
+
+                /*(
+                   (rollPlaneVectorNorth_shipBelly < 90)      && ((rollPlaneVectorEast_shipBelly < 90)     ) //NE
+                || (rollPlaneVectorNorth_shipBelly < 90)      && ((rollPlaneVectorEast_shipBelly - 90) < 90) //NW
+                || (rollPlaneVectorNorth_shipBelly - 90) < 90 && ((rollPlaneVectorEast_shipBelly - 90) < 90) //SW
+                || (rollPlaneVectorNorth_shipBelly - 90) < 90 && ((rollPlaneVectorEast_shipBelly < 90))    ) //SE
+                )*/
                 {
                     vessel.OnFlyByWire -= steeringCommand_InitialRoll;
-                    vessel.OnFlyByWire += steeringCommand_Roll;
-                    steeringMode = 2;
-                }
-                //NW
-                if (steeringMode == 2 && rollPlaneVectorNorth_shipBelly < 90 && ((rollPlaneVectorEast_shipBelly - 90) < 90))
-                {
-                    vessel.OnFlyByWire -= steeringCommand_InitialRoll;
-                    vessel.OnFlyByWire += steeringCommand_Roll;
+                    vessel.OnFlyByWire += steeringCommand_Roll_SW;
                     steeringMode = 2;
                 }
                 if (steeringMode == 2 && vessel.srfSpeed > 100)
@@ -628,6 +678,11 @@ namespace BenjisHardwiredLogic
                 //DebugLines.draw(vessel, "launchsitePrograde", launchsitePrograde, Color.yellow);
 
 
+
+
+                DEBUGazimuthdegree = FullCircle.GetAzimuth_KSPNavBall();
+                DEBUGshipdegree = FullCircle.GetShip_KSPNavBall(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly);//FullCircle.GetDegBetweenAzimuthAndShip(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly);
+                DEBUGshipazimuth = FullCircle.GetDegBetweenAzimuthAndShip(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly);
 
                 yield return new WaitForSeconds(.025f);
             }
@@ -734,12 +789,12 @@ namespace BenjisHardwiredLogic
                 T0AngleOrbitalTarget = HelperFunctions.degAngle(directionAscentGuidance.direction, launchsiteRadial);
                 T0AngleOrbitalAirstream = HelperFunctions.degAngle(vessel.srf_velocity, launchsiteRadial);
                 T0AngleOrbitalVacPro = HelperFunctions.degAngle(vessel.obt_velocity, launchsiteRadial);
-                
+
 
                 yield return new WaitForSeconds(.1f);
             }
         }
-        
+
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         private IEnumerator coroutineCalculateAutoAscent()
         {
@@ -793,7 +848,7 @@ namespace BenjisHardwiredLogic
                             //Slowly transition from the rocket's airstream velocity vector to its orbital prograde vector, while dynamic pressure falls from 2 to 0
                             if (vessel.dynamicPressurekPa <= 2 && vessel.dynamicPressurekPa > 1)
                             {
-                                directionToFlyTo = vessel.srf_velocity + vessel.obt_velocity * ( -(vessel.dynamicPressurekPa - 2));
+                                directionToFlyTo = vessel.srf_velocity + vessel.obt_velocity * (-(vessel.dynamicPressurekPa - 2));
                             }
                             if (vessel.dynamicPressurekPa <= 1 && vessel.dynamicPressurekPa > 0)
                             {
@@ -832,7 +887,7 @@ namespace BenjisHardwiredLogic
                 //DebugLines.draw(vessel, "VacuumPrograde", vessel.obt_velocity, Color.red);
                 //DebugLines.draw(vessel, "Target", directionAscentGuidance.direction, lightblue);
 
-                
+
                 //ScreenMessages.PostScreenMessage("Airstream - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.srf_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
                 //ScreenMessages.PostScreenMessage("VacProgra - Target: " + HelperFunctions.degAngle(directionAscentGuidance.direction, vessel.obt_velocity), 0.4f, ScreenMessageStyle.UPPER_LEFT);
 

@@ -64,6 +64,7 @@
     <Compile Include="BenjisAutoAscent.cs" />
     <Compile Include="BenjisFairingSeparator.cs" />
     <Compile Include="DebugLines.cs" />
+    <Compile Include="FullCircle.cs" />
     <Compile Include="HelperFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
