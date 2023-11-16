@@ -31,18 +31,18 @@ namespace BenjisHardwiredLogic
 
 
         //TEMPTEMPTEMPTEMPTEMP//
-        [KSPField(isPersistant = true, guiActive = false)]
-        double rollPlaneVectorNorth_shipBelly_Previous;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //double rollPlaneVectorNorth_shipBelly_Previous;
         [KSPField(isPersistant = true, guiActive = true)]
         double rollPlaneVectorNorth_shipBelly;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double rollPlaneVectorEast_shipBelly_Previous;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //double rollPlaneVectorEast_shipBelly_Previous;
         [KSPField(isPersistant = true, guiActive = true)]
         double rollPlaneVectorEast_shipBelly;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double VECVECsteeringNorth;
-        [KSPField(isPersistant = true, guiActive = false)]
-        double VECVECsteeringEast;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //double VECVECsteeringNorth;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //double VECVECsteeringEast;
 
 
 
@@ -88,8 +88,8 @@ namespace BenjisHardwiredLogic
         //Vectors we need
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d shipLeft;
-        [KSPField(isPersistant = true, guiActive = false)]
-        Vector3d shipRight;
+        //[KSPField(isPersistant = true, guiActive = false)]
+        //Vector3d shipRight;
         [KSPField(isPersistant = true, guiActive = false)]
         Vector3d shipBelly;
         [KSPField(isPersistant = true, guiActive = false)]
@@ -464,6 +464,7 @@ namespace BenjisHardwiredLogic
                 if (desiredOrbitalDirection == "Prograde")
                 {
                     desiredHeading.y = azimuth;
+                    /*
                     VECVECsteeringNorth = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly));
                     VECVECsteeringEast = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly));
                     // SE
@@ -499,6 +500,7 @@ namespace BenjisHardwiredLogic
                         initialRollDirection = 1;
                     }
                     steeringMode = 1;
+                    */
                 }
             }
             //LaunchSite is north of the equator => launching South
@@ -598,15 +600,8 @@ namespace BenjisHardwiredLogic
             activeCoroutine = 1;
             for (; ; )
             {
-                if (steeringMode == 1 && Math.Abs(VECVECsteeringEast) < 10)
-
-
-                /*(
-                   (rollPlaneVectorNorth_shipBelly < 90)      && ((rollPlaneVectorEast_shipBelly < 90)     ) //NE
-                || (rollPlaneVectorNorth_shipBelly < 90)      && ((rollPlaneVectorEast_shipBelly - 90) < 90) //NW
-                || (rollPlaneVectorNorth_shipBelly - 90) < 90 && ((rollPlaneVectorEast_shipBelly - 90) < 90) //SW
-                || (rollPlaneVectorNorth_shipBelly - 90) < 90 && ((rollPlaneVectorEast_shipBelly < 90))    ) //SE
-                )*/
+                
+                if (steeringMode == 1)
                 {
                     vessel.OnFlyByWire -= steeringCommand_InitialRoll;
                     vessel.OnFlyByWire += steeringCommand_Roll_SW;
@@ -658,16 +653,16 @@ namespace BenjisHardwiredLogic
 
 
                 //rollPlaneVector_shipLeft_Previous = rollPlaneVector_shipLeft;
-                rollPlaneVectorNorth_shipBelly_Previous = rollPlaneVectorNorth_shipBelly;
+                //rollPlaneVectorNorth_shipBelly_Previous = rollPlaneVectorNorth_shipBelly;
                 rollPlaneVectorNorth_shipBelly = HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly);
 
-                rollPlaneVectorEast_shipBelly_Previous = rollPlaneVectorEast_shipBelly;
+                //rollPlaneVectorEast_shipBelly_Previous = rollPlaneVectorEast_shipBelly;
                 rollPlaneVectorEast_shipBelly = HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly);
 
                 //rollPlaneVector_shipLeft = HelperFunctions.degAngle(rollPlaneVectorNorth, shipLeft);
                 //rollPlaneVector_shipRight = HelperFunctions.degAngle(rollPlaneVectorNorth, shipRight);
-                VECVECsteeringNorth = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly));
-                VECVECsteeringEast = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly));
+                //VECVECsteeringNorth = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorNorth, shipBelly));
+                //VECVECsteeringEast = (desiredHeading.y - HelperFunctions.degAngle(rollPlaneVectorEast, shipBelly));
 
 
                 DebugLines.draw(vessel, "rollPlaneVectorNorth", rollPlaneVectorNorth, Color.red);
