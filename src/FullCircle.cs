@@ -213,6 +213,10 @@ namespace BenjisHardwiredLogic
             {
                 return_value -= 360;
             }
+            else if (return_value < -180)
+            {
+                return_value += 360;
+            }
 
             return return_value;
         }
