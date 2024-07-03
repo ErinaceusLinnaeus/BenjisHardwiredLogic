@@ -1,6 +1,11 @@
 ## Changelog:
-##### 2.1.0
-##### - Ascent Guidance
+##### 2.0.2
+##### Fixes (brought up by gotmachine)
+##### - Change Strings to be empty instead of NULL
+##### - Cleaning up the mess that almost everything is persistent, because I was to lazy to think about what needs to be saved
+##### - Error spam in the Editor
+##### - Change a terrible idea (await) into a coroutine
+##### - Properly removing GameEvents in OnDestroy(), there'S memory leaks
 ##### 2.0.1
 ##### - Include a .version file to let ckan know exactly about downwards compatibility
 ##### - Corrected an error in the pdf (the Fairing separator doesn't have a delay mode, stupid copy-paste mistake)
