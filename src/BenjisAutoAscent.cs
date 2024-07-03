@@ -116,7 +116,7 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         //private double desiredPitch = 0;
         private Vector3d desiredHeading = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private Vector3d sumOfAngulars;
 
         //Keeping track of what coroutine is running at the moment
@@ -172,15 +172,15 @@ namespace BenjisHardwiredLogic
         private int steerDragPos = 0;
         [KSPField(isPersistant = true, guiActive = false)]
         private Vector3d steerDragAverage = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private Vector3d steerDrag = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private Vector3d lastTicksSteering = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private Vector3d lastTicksAngularVelocity;// = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private Vector3d pointToTurn = new Vector3d(0, 0, 0);
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private double steerStrengthFactor = 10;
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchData_Altitude;
@@ -279,9 +279,12 @@ namespace BenjisHardwiredLogic
         //All the steering happens here
         private void steeringCommand_InitialRoll(FlightCtrlState state)
         {
-            //            state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
-            //            state.roll = (float)(initialRollDirection * 0.025);
-            //            state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            /////////////////ALLLLL CHAOS
+            //state.pitch = (float)HelperFunctions.limit((((vessel.angularVelocityD.x + (sumOfAngulars.x + pointToTurn.x) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
+            state.roll = (float)HelperFunctions.limit((((vessel.angularVelocityD.y + FullCircle.GetDegBetweenAzimuthAndShip(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly) - pointToTurn.y) * steerStrengthFactor) / TimeWarp.CurrentRate), -0.025, 0.025);
+            //state.roll = (float)HelperFunctions.limit(vessel.angularVelocityD.y + (FullCircle.GetDegBetweenAzimuthAndShip(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly)) + pointToTurn.y, -1, 1);
+            //state.roll = -(float)HelperFunctions.limit((((vessel.angularVelocityD.y + FullCircle.GetDegBetweenAzimuthAndShip(rollPlaneVectorEast_shipBelly, rollPlaneVectorNorth_shipBelly) + pointToTurn.y) * steerStrengthFactor) / TimeWarp.CurrentRate), -0.025, 0.025); //0.05 for Stock-Souposphere
+            //state.yaw = (float)HelperFunctions.limit((((vessel.angularVelocityD.z + (sumOfAngulars.z + pointToTurn.z) * steerStrengthFactor)) / TimeWarp.CurrentRate), -1, 1);
         }
         private void steeringCommand_Roll(FlightCtrlState state)
         {
@@ -582,6 +585,8 @@ namespace BenjisHardwiredLogic
             StartCoroutine(coroutineUpdateVectors());
             StartCoroutine(coroutineSteeringCheck());
 
+            vessel.OnFlyByWire += steeringMeasurements;
+
             if (correctiveSteering)
             {
                 vessel.OnFlyByWire += steeringCommand_InitialRoll;
@@ -601,10 +606,9 @@ namespace BenjisHardwiredLogic
             for (; ; )
             {
                 
-                if (steeringMode == 1)
+                if (steeringMode == 1 && vessel.srfSpeed > 100000)
                 {
                     vessel.OnFlyByWire -= steeringCommand_InitialRoll;
-                    vessel.OnFlyByWire += steeringCommand_Roll_SW;
                     steeringMode = 2;
                 }
                 if (steeringMode == 2 && vessel.srfSpeed > 100)
@@ -765,9 +769,9 @@ namespace BenjisHardwiredLogic
                     pointToTurn.x *= 1.5;
 
                 if (sumOfAngulars.y >= 0)
-                    pointToTurn.y *= -1.5;
+                    pointToTurn.y *= -10;// -1.5;
                 else
-                    pointToTurn.y *= 1.5;
+                    pointToTurn.y *= 10;// 1.5;
 
                 if (sumOfAngulars.z >= 0)
                     pointToTurn.z *= -1.5;
