@@ -70,7 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">
-      <Link>.editorconfig</Link>
+      <Link>.editorconfig</Link>      
     </None>
     <None Include="BenjisHardwiredLogic.cfg" />
     <None Include="Properties\BenjisHardwiredLogic.version" />
