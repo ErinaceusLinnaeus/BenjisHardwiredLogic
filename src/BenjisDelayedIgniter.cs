@@ -146,6 +146,20 @@ namespace BenjisHardwiredLogic
             base.OnStart(state);
         }
 
+        public void OnDestroy()
+        {
+            GameEvents.onEditorShipModified.Remove(updateEditorPAW);
+            GameEvents.onLaunch.Remove(isLaunched);
+            GameEvents.onPartDie.Remove(isDead);
+        }
+
+        public void OnPartDie()
+        {
+            GameEvents.onEditorShipModified.Remove(updateEditorPAW);
+            GameEvents.onLaunch.Remove(isLaunched);
+            GameEvents.onPartDie.Remove(isDead);
+        }
+
         //Resume the last active coroutine, makes (quick-)saving useable
         private void isLoading()
         {

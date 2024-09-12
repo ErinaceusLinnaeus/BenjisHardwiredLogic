@@ -1,11 +1,13 @@
 ## Changelog:
 ##### 2.0.2
-##### Fixes (brought up by gotmachine)
-##### - Change Strings to be empty instead of NULL
-##### - Cleaning up the mess that almost everything is persistent, because I was to lazy to think about what needs to be saved
-##### - Error spam in the Editor
-##### - Change a terrible idea (await) into a coroutine
-##### - Properly removing GameEvents in OnDestroy(), there'S memory leaks
+##### Addition
+##### - Launch Clamps have a timer now
+##### Fixes (to errors brought to my attention by gotmachine)
+##### - Fixing [KSPCF:MemoryLeaks] by removing functions from GameEvents
+##### - NOT DONE: Change Strings to be empty instead of NULL
+##### - NOT DONE: Cleaning up the mess that almost everything is persistent, because I was to lazy to think about what needs to be saved
+##### - NOT DONE: Change a terrible idea (await) into a coroutine
+##### - NOT DONE: Properly removing GameEvents in OnDestroy(), there's memory leaks
 ##### 2.0.1
 ##### - Include a .version file to let ckan know exactly about downwards compatibility
 ##### - Corrected an error in the pdf (the Fairing separator doesn't have a delay mode, stupid copy-paste mistake)

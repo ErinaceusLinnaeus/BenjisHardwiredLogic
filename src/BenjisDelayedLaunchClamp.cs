@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace BenjisHardwiredLogic
 {
-    public class BenjisFairingSeparator : PartModule //ProceduralFairingDecoupler
+    public class BenjisDelayedClamp : PartModule //*LaunchClamp
     {
         #region Fields
 
@@ -12,13 +12,17 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private int activeCoroutine = 0;
 
+        //Saving UniversalTime into launchTime when the Vessel gets launched
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double launchTime = 0;
+
         //Catch the slider dragging "bug"
         [KSPField(isPersistant = true, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
         [KSPField(isPersistant = true, guiActive = false)]
-        private const string PAWFairingGroupName = "Benji's Fairing Separator";
+        private const string PAWLaunchClampGroupName = "Benji's Delayed Launch Clamp";
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = true, guiActive = false)]
@@ -34,38 +38,27 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private const string StringActive = "active";
 
-
         //The PAW fields in the editor
-        //A button to enable or disable the function
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
+        //A button to enable or disable the module
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Circuits are:", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName),
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
-        //Specify the Height in kilometers in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Altitude [km]", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 200f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 0)] //140km - that's where the atmosphere ends
-        private float altitudeToSeparate = 75;
-
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Jettison", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_ChooseOption(options = new string[2] { "Payload", "Interstage" })]
-        private string PAWfairing = "Payload";
-
+        //Specify the delay in seconds in the Editor
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Delay [s]", guiFormat = "F1", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
+        private float delaySeconds = 0;
 
         //The PAW fields in Flight
-        //Shows if the fairing is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private string PAWmodInUse;
+        //Shows if the decoupler is active
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
+        private string PAWmodInUse = "inactive";
+        //Shows the time until the decoupler decouples in seconds, one decimal
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until release", guiUnits = "s", guiFormat = "F1", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
+        private double PAWtimeToRelease = 0;
 
-        //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Altitude to Jettison", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
-        private float PAWaltitudeToJettison = 0;
-
-        //Shown in the Editor and in Flight
-        //A button to enable or disable if a message for this event will be shown
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Event Messaging:", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName),
-            UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
-        private bool eventMessagingWanted = true;
+        //A small variable to manage the onScreen Messages
+        private char nextMessageStep = (char)0;
 
         #endregion
 
@@ -90,21 +83,23 @@ namespace BenjisHardwiredLogic
             GameEvents.onLaunch.Remove(isLaunched);
             GameEvents.onPartDie.Remove(isDead);
         }
-
+        
         public void OnPartDie()
         {
             GameEvents.onEditorShipModified.Remove(updateEditorPAW);
             GameEvents.onLaunch.Remove(isLaunched);
             GameEvents.onPartDie.Remove(isDead);
         }
-
+        
         //Resume the last active coroutine, makes (quick-)saving useable
         private void isLoading()
         {
             if (activeCoroutine == 1)
                 StartCoroutine(coroutinePostLaunch());
+
         }
 
+        //Initialize all the fields when in FLIGHT
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
@@ -116,12 +111,13 @@ namespace BenjisHardwiredLogic
             //Now to check if we are on the launch pad
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
             {
+                //Add up the two parts of the overall delay and show me the numbers
+                PAWtimeToRelease =  delaySeconds;
+
                 //Set the visible PAW variable 
                 if (modInUse)
                 {
                     PAWmodInUse = StringConnected;
-                    //Set the text for inFlight Information
-                    PAWaltitudeToJettison = altitudeToSeparate;
 
                     GameEvents.onLaunch.Add(isLaunched);
                     GameEvents.onPartDie.Add(isDead);
@@ -130,7 +126,7 @@ namespace BenjisHardwiredLogic
                 {
                     PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
-                    Fields[nameof(PAWaltitudeToJettison)].guiActive = false;
+                    Fields[nameof(PAWtimeToRelease)].guiActive = false;
                 }
 
             }
@@ -151,19 +147,15 @@ namespace BenjisHardwiredLogic
         {
             if (modInUse)
             {
-                Fields[nameof(altitudeToSeparate)].guiActiveEditor = true;
-                Fields[nameof(PAWfairing)].guiActiveEditor = true;
-                Fields[nameof(eventMessagingWanted)].guiActiveEditor = true;
+                Fields[nameof(delaySeconds)].guiActiveEditor = true;
             }
             else
             {
                 //If this gui or any other is visible now, then we seem to change this in the next steps
-                if (Fields[nameof(altitudeToSeparate)].guiActiveEditor)
+                if (Fields[nameof(delaySeconds)].guiActiveEditor)
                     negChangeHappened = true;
 
-                Fields[nameof(altitudeToSeparate)].guiActiveEditor = false;
-                Fields[nameof(PAWfairing)].guiActiveEditor = false;
-                Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+                Fields[nameof(delaySeconds)].guiActiveEditor = false;
             }
 
             //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
@@ -178,45 +170,57 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
             StartCoroutine(coroutinePostLaunch());
         }
 
-        //Gets called every .1 seconds and checks if the desired height is reached
+        //Gets called every .1 seconds and counts down to 0 after launch
         IEnumerator coroutinePostLaunch()
         {
             activeCoroutine = 1;
             for (; ; )
             {
-                //Are we high enough to separate...
-                if (vessel.orbit.altitude >= (PAWaltitudeToJettison * 1000f))
+                //Calculate how long until the engine ignites
+                PAWtimeToRelease = (launchTime + delaySeconds) - Planetarium.GetUniversalTime();
+
+                if (PAWtimeToRelease <= 0)
                 {
-                    //Does the user want messages?
-                    if (eventMessagingWanted)
-                    {
-                        //Showing the jettison message
-                        ScreenMessages.PostScreenMessage("Jettisoning " + PAWfairing + "-fairing.", 3f, ScreenMessageStyle.UPPER_CENTER);
-                    }
-                    //...do it already
-                    part.decouple();
+                    releaseClamp();
                     endMod();
+                    StopCoroutine(coroutinePostLaunch());
                     yield break;
                 }
+
                 yield return new WaitForSeconds(.1f);
             }
         }
 
+        //Decouples the stage
+        private void releaseClamp()
+        {
+            part.decouple();
+            //Hide the timeToDecouple once the stage is decoupled
+            Fields[nameof(PAWtimeToRelease)].guiActive = false;
+
+        }
+
+        //Hide all the fields
         private void endMod()
         {
-            modInUse = false;
-            PAWmodInUse = StringDisconnected;
-            //Disable all text for inFlight Information
-            Fields[nameof(PAWaltitudeToJettison)].guiActive = false;
-            Fields[nameof(eventMessagingWanted)].guiActive = false;
+            if (modInUse)
+            {
+                modInUse = false;
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWtimeToRelease)].guiActive = false;
 
-            //Update the size of the PAW
-            MonoUtilities.RefreshPartContextWindow(part);
+                //Update the size of the PAW
+                MonoUtilities.RefreshPartContextWindow(part);
 
-            activeCoroutine = 0;
+                activeCoroutine = 0;
+            }
         }
 
         //Gets called when the part explodes etc.

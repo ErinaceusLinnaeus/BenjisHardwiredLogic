@@ -58,6 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BenjisDelayedLaunchClamp.cs" />
     <Compile Include="BenjisDelayedDecoupler.cs" />
     <Compile Include="BenjisDelayedIgniter.cs" />
     <Compile Include="BenjisDelayedRCS.cs" />
@@ -70,7 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">
-      <Link>.editorconfig</Link>      
+      <Link>.editorconfig</Link>
     </None>
     <None Include="BenjisHardwiredLogic.cfg" />
     <None Include="Properties\BenjisHardwiredLogic.version" />
@@ -99,12 +100,12 @@ copy "$(ProjectDir)bin\Release\BenjisHardwiredLogic.dll" "$(ProjectDir)..\GameDa
 //BenjisHardwiredLogic.cfg
 //delete old files
 del /f "B:\Spiele\KSP\Stock\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-del /f "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
-del /f "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+del /f "B:\Spiele\KSP\RP-1\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
+del /f "B:\Spiele\KSP\RO\GameData\BenjisHardwiredLogic\BenjisHardwiredLogic.cfg"
 //copy new files
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP Stock\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RP-1\GameData\BenjisHardwiredLogic\" /Y
-copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "A:\Spiele\KSP RO\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\KSP\Stock\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\KSP\RP-1\GameData\BenjisHardwiredLogic\" /Y
+copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "B:\Spiele\KSP\RO\GameData\BenjisHardwiredLogic\" /Y
 copy "$(ProjectDir)BenjisHardwiredLogic.cfg" "$(ProjectDir)..\GameData\BenjisHardwiredLogic\" /Y
 
 //CHANGELOG.md
