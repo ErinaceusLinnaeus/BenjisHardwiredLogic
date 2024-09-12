@@ -13,25 +13,25 @@ namespace BenjisHardwiredLogic
         private int activeCoroutine = 0;
 
         //Catch the slider dragging "bug"
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string PAWFairingGroupName = "Benji's Fairing Separator";
 
         //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringDisconnected = "disconnected";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringInactive = "inactive";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
 
@@ -54,11 +54,11 @@ namespace BenjisHardwiredLogic
 
         //The PAW fields in Flight
         //Shows if the fairing is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private string PAWmodInUse;
 
         //Shows the Height in kilometers at which the fairing gets separated
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Altitude to Jettison", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Altitude to Jettison", guiUnits = "km", guiFormat = "F0", groupName = PAWFairingGroupName, groupDisplayName = PAWFairingGroupName)]
         private float PAWaltitudeToJettison = 0;
 
         //Shown in the Editor and in Flight

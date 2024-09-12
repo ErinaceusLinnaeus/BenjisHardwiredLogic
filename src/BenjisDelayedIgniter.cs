@@ -17,31 +17,31 @@ namespace BenjisHardwiredLogic
         private double launchTime = 0;
 
         //Check the derivative of the eccentricity for circularizing
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool eccRising = false;
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private double tempEcc = 0.0;
 
         //Catch the slider dragging "bug"
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string PAWIgniterGroupName = "Benji's Delayed Igniter";
 
         //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringDisconnected = "disconnected";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringInactive = "inactive";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
         //The PAW fields in the editor
@@ -96,28 +96,28 @@ namespace BenjisHardwiredLogic
 
         //The PAW fields in Flight
         //Shows if the igniter is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWmodInUse = "inactive";
         //Shows the time until the engine is activated in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Ignition", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private double PAWtimeToIgnite = 0;
         //Shows what delay mode this engine is in
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWdelayMode = "Post Launch";
         //Shows if the stage will cut at Apogee
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Cut @ Apogee", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Cut @ Apogee", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWcutAtApogee = "";
         //Shows what Apogee we aim for
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Target Apogee", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Target Apogee", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWtargetApogee = "";
         //Shows what type of engine this is
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Engine", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Engine", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWengine = "1st Stage";
         //Shows what type of mode this Kick Stage operates in
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Kick Stage Mode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Kick Stage Mode", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWkickMode = "Burn-Out";
         //Shows what Apside we aim for
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Target Apside", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Target Apside", guiUnits = "km", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private string PAWtargetApside = "";
 
         //Shown in the Editor and in Flight

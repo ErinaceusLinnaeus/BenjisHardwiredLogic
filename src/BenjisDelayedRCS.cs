@@ -17,25 +17,25 @@ namespace BenjisHardwiredLogic
         private double launchTime = 0;
 
         //Catch the slider dragging "bug"
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string PAWRCSGroupName = "Benji's Delayed RCS";
 
         //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringDisconnected = "disconnected";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringInactive = "inactive";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
         //The PAW fields in the editor
@@ -65,13 +65,13 @@ namespace BenjisHardwiredLogic
 
         //The PAW fields in Flight
         //Shows if RCS is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
         private string PAWmodInUse = "inactive";
         //Shows the time until RCS gets activated in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Activation", guiUnits = "s", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Activation", guiUnits = "s", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
         private double PAWtimeToActivate = 0;
         //Shows what delay mode this RCS is in
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
         private string PAWdelayMode = "Post Launch";
 
 

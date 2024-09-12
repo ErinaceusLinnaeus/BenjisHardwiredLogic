@@ -17,25 +17,25 @@ namespace BenjisHardwiredLogic
         private double launchTime = 0;
 
         //Catch the slider dragging "bug"
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string PAWLaunchClampGroupName = "Benji's Delayed Launch Clamp";
 
         //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringDisconnected = "disconnected";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringInactive = "inactive";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
         //The PAW fields in the editor
@@ -51,10 +51,10 @@ namespace BenjisHardwiredLogic
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
         private string PAWmodInUse = "inactive";
         //Shows the time until the decoupler decouples in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until release", guiUnits = "s", guiFormat = "F1", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Seconds until release", guiUnits = "s", guiFormat = "F1", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
         private double PAWtimeToRelease = 0;
 
         //A small variable to manage the onScreen Messages

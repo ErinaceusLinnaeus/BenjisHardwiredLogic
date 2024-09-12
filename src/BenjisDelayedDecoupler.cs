@@ -17,25 +17,25 @@ namespace BenjisHardwiredLogic
         private double launchTime = 0;
 
         //Catch the slider dragging "bug"
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private bool negChangeHappened = false;
 
         //Headline name for the GUI
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string PAWDecouplerGroupName = "Benji's Delayed Decoupler";
 
         //Text, if functionality is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringDisconnected = "disconnected";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringConnected = "connected";
 
         //Text, if event messaging is disabled/enabled
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringInactive = "inactive";
 
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
         //The PAW fields in the editor
@@ -70,16 +70,16 @@ namespace BenjisHardwiredLogic
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWmodInUse = "inactive";
         //Shows the time until the decoupler decouples in seconds, one decimal
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiUnits = "s", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Seconds until Decouple", guiUnits = "s", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private double PAWtimeToDecouple = 0;
         //Shows what delay mode this decoupler is in
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Delaymode", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWdelayMode = "Post Launch";
         //Shows what type of stage will be decouple by this decoupler
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Decouple", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private string PAWstage = "1st Stage";
 
         //Shown in the Editor and in Flight
