@@ -100,10 +100,16 @@ namespace BenjisHardwiredLogic
         }
 
         //Initialize all the fields when in FLIGHT
+        /*
         private async void initMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
+        */
+        IEnumerator initMod()
+        {
+            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
+            yield return new WaitForSeconds(0.25f);
 
             if (activeCoroutine != 0)
                 isLoading();
@@ -112,7 +118,7 @@ namespace BenjisHardwiredLogic
             if (vessel.situation == Vessel.Situations.PRELAUNCH)
             {
                 //Add up the two parts of the overall delay and show me the numbers
-                PAWtimeToRelease =  delaySeconds;
+                PAWtimeToRelease = delaySeconds;
 
                 //Set the visible PAW variable 
                 if (modInUse)

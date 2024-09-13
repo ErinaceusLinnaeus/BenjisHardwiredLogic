@@ -2,11 +2,13 @@
 ##### 2.0.2
 ##### Addition
 ##### - Launch Clamps have a timer now
-##### Fixes (to errors brought to my attention by gotmachine)
+##### Errors brought to my attention by gotmachine
 ##### - Fixing [KSPCF:MemoryLeaks] by removing functions from GameEvents
-##### - Cleaning up the mess that every field was persistant, because I was to lazy to think about what needs to be saved
+##### - Cleaning up the mess that every field was persistant, because I was too lazy to think about what needs to be
 					Igniter: tempEcc & eccRising are not persistant. CHECK if circularization still works
-##### - NOT DONE: Change a terrible idea (await) into a coroutine
+##### - Change a terrible idea (await) into a coroutine
+					STILL needs testing
+##### - Changed some strings from NULL to being empty
 ##### 2.0.1
 ##### - Include a .version file to let ckan know exactly about downwards compatibility
 ##### - Corrected an error in the pdf (the Fairing separator doesn't have a delay mode, stupid copy-paste mistake)
