@@ -76,7 +76,7 @@ namespace BenjisHardwiredLogic
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private float totalDelay = 0;
 
         //Name what the engine will be called during event messaging

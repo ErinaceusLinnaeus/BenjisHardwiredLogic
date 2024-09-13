@@ -60,7 +60,7 @@ namespace BenjisHardwiredLogic
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWDecouplerGroupName, groupDisplayName = PAWDecouplerGroupName)]
         private float totalDelay = 0;
 
         //Name what the stage that will be decoupled will be called during event messaging
