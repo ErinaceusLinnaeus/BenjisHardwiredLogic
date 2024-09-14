@@ -62,7 +62,6 @@
     <Compile Include="BenjisDelayedDecoupler.cs" />
     <Compile Include="BenjisDelayedIgniter.cs" />
     <Compile Include="BenjisDelayedRCS.cs" />
-    <Compile Include="BenjisAutoAscent.cs" />
     <Compile Include="BenjisFairingSeparator.cs" />
     <Compile Include="DebugLines.cs" />
     <Compile Include="FullCircle.cs" />
