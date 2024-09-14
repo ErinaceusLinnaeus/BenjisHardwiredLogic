@@ -1,11 +1,13 @@
 ## Changelog:
 ##### 2.0.2
-##### Addition
+##### Addition:
 ##### - Launch Clamps have a timer now
-##### Errors brought to my attention by gotmachine
+#####		(Because of that, the flight timer starts at engine light. Add that to you're other timers)
+##### Fixes:
+#####	Errors brought to my attention by gotmachine
 ##### - Fixing [KSPCF:MemoryLeaks] by removing functions from GameEvents
-##### - Cleaning up the mess that every field was persistant, because I was too lazy to think about what needs to be
-					Igniter: tempEcc & eccRising are not persistant. CHECK if circularization still works
+##### - Cleaning up the mess that every field was persistent, because I was too lazy to think about what needs to be
+					Igniter: tempEcc & eccRising are not persistent. CHECK if circularization still works
 ##### - Change a terrible idea (await) into a coroutine
 					STILL needs testing
 ##### - Changed some strings from NULL to being empty
