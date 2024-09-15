@@ -137,7 +137,7 @@ namespace BenjisHardwiredLogic
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
-                StartCoroutine(initMod());
+                StartCoroutine(coroutineInitMod());
 
             if (HighLogic.LoadedScene == GameScenes.EDITOR)
                 initEditor();
@@ -191,7 +191,7 @@ namespace BenjisHardwiredLogic
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             await Task.Delay(250);
         */
-        IEnumerator initMod()
+        IEnumerator coroutineInitMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             yield return new WaitForSeconds(0.25f);
@@ -735,6 +735,7 @@ namespace BenjisHardwiredLogic
         private void isDead(Part part)
         {
             //Stopping all the coroutines that might be running
+            StopCoroutine(coroutineInitMod());
             StopCoroutine(coroutinePostLaunch());
             StopCoroutine(coroutinePostLaunchCut());
             StopCoroutine(coroutinePreApsideWait());
