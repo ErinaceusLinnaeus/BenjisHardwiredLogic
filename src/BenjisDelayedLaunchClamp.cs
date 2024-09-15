@@ -68,7 +68,7 @@ namespace BenjisHardwiredLogic
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedScene == GameScenes.FLIGHT)
-                initMod();
+                StartCoroutine(initMod());
 
             if (HighLogic.LoadedScene == GameScenes.EDITOR)
                 initEditor();
