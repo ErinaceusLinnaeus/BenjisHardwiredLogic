@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("BenjisHardwiredLogic")]
-[assembly: AssemblyCopyright("Copyright ©  2021-2024")]
+[assembly: AssemblyCopyright("Copyright © 2021-2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
