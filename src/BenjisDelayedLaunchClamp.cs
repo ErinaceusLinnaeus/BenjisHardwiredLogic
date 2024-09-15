@@ -50,10 +50,10 @@ namespace BenjisHardwiredLogic
         private float delaySeconds = 0;
 
         //The PAW fields in Flight
-        //Shows if the decoupler is active
+        //Shows if the launch clamp is active
         [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Circuits are", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
         private string PAWmodInUse = "inactive";
-        //Shows the time until the decoupler decouples in seconds, one decimal
+        //Shows the time until the launch clamp releases in seconds, one decimal
         [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "Seconds until release", guiUnits = "s", guiFormat = "F1", groupName = PAWLaunchClampGroupName, groupDisplayName = PAWLaunchClampGroupName)]
         private double PAWtimeToRelease = 0;
 
@@ -203,7 +203,7 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //Decouples the stage
+        //Release the clamp
         private void releaseClamp()
         {
             part.decouple();

@@ -230,8 +230,8 @@ namespace BenjisHardwiredLogic
         private void isDead(Part part)
         {
             //Stopping all the coroutines that might be running
-            StopCoroutine(coroutinePostLaunch());
             StopCoroutine(coroutineInitMod());
+            StopCoroutine(coroutinePostLaunch());
         }
 
         #endregion
