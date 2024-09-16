@@ -1,5 +1,5 @@
 ## Changelog:
-##### 2.0.2
+##### 2.1.0
 ##### Addition:
 ##### - Launch Clamps have a timer now
 #####		(Because of that, the flight timer starts at engine light. Add that to you're other timers)
@@ -9,7 +9,6 @@
 ##### - Cleaning up the mess that every field was persistent, because I was too lazy to think about what needs to be
 					Igniter: tempEcc & eccRising are not persistent. CHECK if circularization still works
 ##### - Change a terrible idea (await) into a coroutine
-					STILL needs testing
 ##### - Changed some strings from NULL to being empty
 ##### 2.0.1
 ##### - Include a .version file to let ckan know exactly about downwards compatibility
@@ -36,14 +35,14 @@
 ##### OnScreen messaging system:
 ##### - All messages are now schown in the upper center
 ##### - Messages can be turned off now, forgot to implement that earlier
-##### v1.2
+##### v1.2.0
 ##### OnScreen messaging system:
 ##### - Can be turned off
 ##### - Shows 3 pre messages before decoupling and igniting at -10s, -5s and -2s
 ##### - Shows a message at decoupling, igniting and fairing separation
 ##### v1.1.1
 ##### -inflight PAW change: Circuits are: connected/disconnected instead of active?: true/false
-##### v1.1
+##### v1.1.0
 ##### -enable/disable button to disable funcionality instead of 0.0s/0km
-##### v1.0
+##### v1.0.0
 ##### -initial release
