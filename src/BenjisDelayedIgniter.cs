@@ -256,6 +256,7 @@ namespace BenjisHardwiredLogic
                     Fields[nameof(PAWengine)].guiActive = false;
                     Fields[nameof(PAWkickMode)].guiActive = false;
                     Fields[nameof(PAWtargetApside)].guiActive = false;
+                    Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
                 }
             }
         }

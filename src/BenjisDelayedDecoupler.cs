@@ -175,6 +175,7 @@ namespace BenjisHardwiredLogic
                     Fields[nameof(PAWtimeToDecouple)].guiActive = false;
                     Fields[nameof(PAWdelayMode)].guiActive = false;
                     Fields[nameof(PAWstage)].guiActive = false;
+                    Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
                 }
 
             }

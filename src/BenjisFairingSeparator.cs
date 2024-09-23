@@ -138,6 +138,7 @@ namespace BenjisHardwiredLogic
                     PAWmodInUse = StringDisconnected;
                     //Disable all text for inFlight Information
                     Fields[nameof(PAWaltitudeToJettison)].guiActive = false;
+                    Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
                 }
 
             }
