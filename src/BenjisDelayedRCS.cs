@@ -166,7 +166,7 @@ namespace BenjisHardwiredLogic
                     //Disable all text for inFlight Information
                     Fields[nameof(PAWtimeToActivate)].guiActive = false;
                     Fields[nameof(PAWdelayMode)].guiActive = false;
-                    Fields[nameof(eventMessagingWanted)].guiActiveEditor = false;
+                    Fields[nameof(eventMessagingWanted)].guiActive = false;
                 }
 
             }

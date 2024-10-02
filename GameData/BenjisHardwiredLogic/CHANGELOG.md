@@ -4,6 +4,7 @@
 ##### - Launch Clamps have a timer now
 #####		(Because of that, the flight timer starts at engine light. Add that to you're other timers)
 ##### Fixes:
+##### - Some fields were visible even when inactive
 #####	Errors brought to my attention by gotmachine
 ##### - Fixing [KSPCF:MemoryLeaks] by removing functions from GameEvents
 ##### - Cleaning up the mess that every field was persistent, because I was too lazy to think about what needs to be
