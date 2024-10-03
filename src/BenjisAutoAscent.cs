@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
+
 
 namespace BenjisHardwiredLogic
 {
@@ -10,6 +13,14 @@ namespace BenjisHardwiredLogic
     {
 
         #region Fields
+
+        //Keeping track of what coroutine is running at the moment
+        [KSPField(isPersistant = true, guiActive = false)]
+        private int activeCoroutine = 0;
+
+        //Catch the slider dragging "bug"
+        [KSPField(isPersistant = false, guiActive = false)]
+        private bool negChangeHappened = false;
 
         //Headline name for the GUI
         [KSPField(isPersistant = false, guiActive = false)]
@@ -37,22 +48,22 @@ namespace BenjisHardwiredLogic
         private bool modInUse = false;
 
         //Specify when the rocket should reach the desired ballistic angle in seconds in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Guided Flight [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Guided Flight [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float guidedFlightSeconds = 0;
 
         //Specify when the rocket should reach the desired ballistic angle in minutes in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Guided Flight [min]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Guided Flight [min]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 5f, incrementLarge = 5f, incrementSmall = 1f, incrementSlide = 1f, sigFigs = 1)]
         private float guidedFlightMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Guided Flight", guiUnits = "sec", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Total Guided Flight", guiUnits = "sec", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private float totalGuidedFlight = 0;
 
         //Specify the angle you wanna end up at
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "DeltaV [m/s]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
-            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 8000.0f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 1f, sigFigs = 1)]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 10000.0f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 1f, sigFigs = 1)]
         private float deltaV = 5000;
 
         //A button to enable or disable the gimbal spin at the end of the guided flight
@@ -71,48 +82,202 @@ namespace BenjisHardwiredLogic
         private string PAWmodInUse = "inactive";
 
         //Shown in the Editor and in Flight
-        //A button to enable or disable if a message for this event will be shown
+        //Shows the estimated downrange for the dV given
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Estimated Downrange", guiUnits = "km", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private double PAWestimatedDownrange = 0;
 
+        //Shows the estimated flight path angle (FPA) at the end of the burn
+        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Estimated FPA", guiUnits = "°", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
+        private double PAWestimatedFPA = 0;
+
         #endregion
 
+        #region Overrides
 
-        /*
-         * 
-        Schleife schreiben, um die weiteste downrange zu finden.
-        verschiedene Winkel ausprobieren (25 - 45°)
-
-
-
-        double calculateRange(double dV, double angle)
+        //This happens once in both EDITOR and FLIGHT
+        public override void OnStart(StartState state)
         {
-            const double g = 9.81; // Acceleration due to gravity in m/s²
-            double radians = angle * (M_PI / 180.0); // Convert angle to radians
-            double range = (pow(dV, 2) * sin(2 * radians)) / g; // Calculate range
-            return range;
+            if (HighLogic.LoadedScene == GameScenes.FLIGHT)
+                StartCoroutine(coroutineInitMod());
+
+            if (HighLogic.LoadedScene == GameScenes.EDITOR)
+                initEditor();
+
+            //Need to call that, in case other mods do stuff here
+            base.OnStart(state);
+        }
+        public void OnDestroy()
+        {
+            GameEvents.onEditorShipModified.Remove(updateEditorPAW);
+            GameEvents.onLaunch.Remove(isLaunched);
+            GameEvents.onPartDie.Remove(isDead);
         }
 
+        public void OnPartDie()
+        {
+            GameEvents.onEditorShipModified.Remove(updateEditorPAW);
+            GameEvents.onLaunch.Remove(isLaunched);
+            GameEvents.onPartDie.Remove(isDead);
+        }
+
+        //Resume the last active coroutine, makes (quick-)saving useable
+        private void isLoading()
+        {
+            if (activeCoroutine == 1)
+                StartCoroutine(coroutineWaitForSpeed());
+            else if (activeCoroutine == 2)
+                StartCoroutine(coroutineBallisticTrajectory());
+        }
+
+        //Initialize all the fields when in FLIGHT
+        IEnumerator coroutineInitMod()
+        {
+            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
+            yield return new WaitForSeconds(0.25f);
+
+            if (activeCoroutine != 0)
+                isLoading();
+
+            //Now to check if we are on the launch pad
+            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            {
+
+                //Set the visible PAW variable 
+                if (modInUse)
+                {
+                    PAWmodInUse = StringConnected;
+
+                    GameEvents.onLaunch.Add(isLaunched);
+                    GameEvents.onPartDie.Add(isDead);
+                }
+                else
+                {
+                    PAWmodInUse = StringDisconnected;
+                    //Disable all text for inFlight Information
+                    Fields[nameof(PAWestimatedDownrange)].guiActive = false;
+                    Fields[nameof(PAWestimatedFPA)].guiActive = false;
+                }
+
+            }
+        }
+
+        //Initialize all the fields when in EDITOR
+        private void initEditor()
+        {
+            //refresh the PAW to its new size
+            //We need to do this once, in case the mod is active in a saved ship
+            updateEditorPAW(null);
+
+            GameEvents.onEditorShipModified.Add(updateEditorPAW);
+        }
+
+        //Tweak what fields are shown in the editor
+        private void updateEditorPAW(ShipConstruct ship)
+        {
+            if (modInUse)
+            {
+                //Calculate the downrange for the given dV with a 45° angle (flat surface in a vaccuum...physics)
+                PAWestimatedDownrange = ((Math.Pow(deltaV, 2) * Math.Sin(2 * (45 * (Math.PI / 180.0)))) / 9.81) / 1000.0f;
+                //Correct the angle with the earth's curvature
+                PAWestimatedFPA = 14.325 * (Math.PI - (PAWestimatedDownrange / 6371));
+                                //14.325 * (π - (Downrange Distance / Radius of Earth))
 
 
+                Fields[nameof(guidedFlightSeconds)].guiActiveEditor = true;
+                Fields[nameof(guidedFlightMinutes)].guiActiveEditor = true;
+                Fields[nameof(totalGuidedFlight)].guiActiveEditor = true;
+                Fields[nameof(deltaV)].guiActiveEditor = true;
+                Fields[nameof(gimbalSpin)].guiActiveEditor = true;
+                Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = true;
+                Fields[nameof(PAWestimatedDownrange)].guiActiveEditor = true;
+                Fields[nameof(PAWestimatedFPA)].guiActiveEditor = true;
+            }
+            else
+            {
+                //If this gui or any other is visible now, then we seem to change this in the next steps
+                if (Fields[nameof(guidedFlightSeconds)].guiActiveEditor)
+                    negChangeHappened = true;
 
-        Flight path angle (FPA) is the direct variable that determines how far you go, what apogee you reach is an effect of that.
+                Fields[nameof(guidedFlightSeconds)].guiActiveEditor = false;
+                Fields[nameof(guidedFlightMinutes)].guiActiveEditor = false;
+                Fields[nameof(totalGuidedFlight)].guiActiveEditor = false;
+                Fields[nameof(deltaV)].guiActiveEditor = false;
+                Fields[nameof(gimbalSpin)].guiActiveEditor = false;
+                Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = false;
+                Fields[nameof(PAWestimatedDownrange)].guiActiveEditor = false;
+                Fields[nameof(PAWestimatedFPA)].guiActiveEditor = false;
+            }
 
-        The equation for calculating the Minimum Energy launch angle is
-        FPA = 14.325*(π - (Downrange Distance / Radius of Earth))
+            //Only hop in hear if change happened in this mod. Else we break the sliders every time we call for a PAW refresh
+            if (negChangeHappened)
+            {
+                negChangeHappened = false;
+                //refresh the PAW to its new size
+                MonoUtilities.RefreshPartContextWindow(part);
+            }
+        }
 
-        This results in the following values for the downrange contracts:
-        3000 km = 38.26°
-        5000 km = 33.76°
-        7500 km = 28.14°
+        //Gets called by the GameEvent when the rocket is launched
+        private void isLaunched(EventReport report)
+        {
+            StartCoroutine(coroutineWaitForSpeed());
+        }
 
-        Flight Path Angle refers to the angle of your velocity vector to the local horizontal.
-        It is not necessarily the number you plug into MechJeb, it is the angle you want your velocity vector to be at when your final stage burns out.
-        Depending on your design, your pitch angle may be slightly higher than this. You want to mess with your MechJeb ascent settings to reach this value.
-        I personally start with MJ settings of 30° and 30% and adjust from there.
+        //Gets called every .1 seconds checks if the rocket goes fast enough to start the turn
+        IEnumerator coroutineWaitForSpeed()
+        {
+            activeCoroutine = 1;
+            for (; ; )
+            {
+                if (vessel.srfSpeed > 50)
+                {
+                    StartCoroutine(coroutineBallisticTrajectory());
+                    StopCoroutine(coroutineWaitForSpeed());
+                }
 
+                yield return new WaitForSeconds(.1f);
+            }
+        }
 
+        //Gets called every .1 seconds and starts the turn
+        IEnumerator coroutineBallisticTrajectory()
+        {
+            activeCoroutine = 2;
+            for (; ; )
+            {
 
-        */
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //Hide all the fields
+        private void endMod()
+        {
+            if (modInUse)
+            {
+                modInUse = false;
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWestimatedDownrange)].guiActive = false;
+                Fields[nameof(PAWestimatedFPA)].guiActive = false;
+
+                //Update the size of the PAW
+                MonoUtilities.RefreshPartContextWindow(part);
+
+                activeCoroutine = 0;
+            }
+        }
+
+        //Gets called when the part explodes etc.
+        private void isDead(Part part)
+        {
+            //Stopping all the coroutines that might be running
+            StopCoroutine(coroutineInitMod());
+            StopCoroutine(coroutineWaitForSpeed());
+            StopCoroutine(coroutineBallisticTrajectory());
+        }
+
+        #endregion
+
     }
 }
