@@ -1,4 +1,7 @@
 ## Changelog:
+##### 2.2.0
+##### Addition:
+##### - Simple automated guidance computer for those ballistic shots (downrange contracts)
 ##### 2.1.0
 ##### Addition:
 ##### - Launch Clamps have a timer now

@@ -1,7 +1,7 @@
 # BenjisHardwiredLogic
 ------------------------------------------------------------------------
 ## Version:
-##### 2.1.0
+##### 2.2.0
 ------------------------------------------------------------------------
 ## Dependencies:
 ##### ModuleManager.4.2.3.dll
@@ -14,6 +14,7 @@
 
 ##### ...is a set of tools to predefine staging actions in your rocket.
 
+##### A simple automated guidance computer for those ballistic shots (downrange contracts).
 ##### Launch Clamps can release after a given time (whenever you think the engine is spooled up).
 ##### Fairings can automatically be jettisoned at a given altitude.
 ##### RCS and Decoupler can be activated at a set time after launch or prior to reaching Apside.

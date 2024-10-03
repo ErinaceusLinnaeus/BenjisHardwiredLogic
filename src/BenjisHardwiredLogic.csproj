@@ -58,6 +58,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BenjisAutoAscent.cs" />
     <Compile Include="BenjisDelayedLaunchClamp.cs" />
     <Compile Include="BenjisDelayedDecoupler.cs" />
     <Compile Include="BenjisDelayedIgniter.cs" />
