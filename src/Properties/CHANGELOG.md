@@ -5,10 +5,10 @@
 #####		(Because of that, the flight timer starts at engine light. Add that to you're other timers)
 ##### Fixes:
 ##### - Some fields were visible even when inactive
-#####	Errors brought to my attention by gotmachine
+##### - Messaging System gave up after loading
+##### Errors brought to my attention by gotmachine (MANY THANKS)
 ##### - Fixing [KSPCF:MemoryLeaks] by removing functions from GameEvents
-##### - Cleaning up the mess that every field was persistent, because I was too lazy to think about what needs to be
-					Igniter: tempEcc & eccRising are not persistent. CHECK if circularization still works
+##### - Cleaning up the mess that every field was persistent, because I was too lazy to think about what really needs to be
 ##### - Change a terrible idea (await) into a coroutine
 ##### - Changed some strings from NULL to being empty
 ##### 2.0.1

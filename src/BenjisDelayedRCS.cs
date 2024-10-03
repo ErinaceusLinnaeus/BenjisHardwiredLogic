@@ -60,7 +60,7 @@ namespace BenjisHardwiredLogic
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
         private float totalDelay = 0;
 
         //The PAW fields in Flight
@@ -82,7 +82,7 @@ namespace BenjisHardwiredLogic
         private bool eventMessagingWanted = true;
 
         //A small variable to manage the onScreen Messages
-        private char nextMessageStep = (char)0;
+        private char nextMessageStep = (char)5;
 
         #endregion
 
@@ -118,58 +118,64 @@ namespace BenjisHardwiredLogic
         //Resume the last active coroutine, makes (quick-)saving useable
         private void isLoading()
         {
+            setMessagingStep();
+
             if (activeCoroutine == 1)
                 StartCoroutine(coroutinePostLaunch());
             else if (activeCoroutine == 3)
                 StartCoroutine(coroutinePreApsideWait());
             else if (activeCoroutine == 4)
+            {
+                setMessagingStep();
                 StartCoroutine(coroutinePreApside());
+            }
 
             if (eventMessagingWanted)
                 StartCoroutine(coroutinePrintMessage());
         }
 
-        //Initialize all the fields when in FLIGHT
-        /*
-        private async void initMod()
+        //Setting the correct messaging step
+        private void setMessagingStep()
         {
-            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            await Task.Delay(250);
-        */
+            if (PAWtimeToActivate > 10)
+                nextMessageStep = (char)0;
+            else if (PAWtimeToActivate <= 10 && PAWtimeToActivate > 5)
+                nextMessageStep = (char)1;
+            else if (PAWtimeToActivate <= 5 && PAWtimeToActivate > 2)
+                nextMessageStep = (char)2;
+            else if (PAWtimeToActivate <= 2 && PAWtimeToActivate > 0)
+                nextMessageStep = (char)3;
+        }
+
+        //Initialize all the fields when in FLIGHT
         IEnumerator coroutineInitMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             yield return new WaitForSeconds(0.25f);
 
+            PAWtimeToActivate = totalDelay = delaySeconds + (delayMinutes * 60f);
+
+            //Set the visible PAW variable 
+            if (modInUse)
+            {
+                PAWmodInUse = StringConnected;
+                //Set the text for inFlight Information
+                PAWdelayMode = delayMode;
+                
+                GameEvents.onLaunch.Add(isLaunched);
+                GameEvents.onPartDie.Add(isDead);
+            }
+            else
+            {
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWtimeToActivate)].guiActive = false;
+                Fields[nameof(PAWdelayMode)].guiActive = false;
+                Fields[nameof(eventMessagingWanted)].guiActive = false;
+            }
+
             if (activeCoroutine != 0)
                 isLoading();
-
-            //Now to check if we are on the launch pad
-            if (vessel.situation == Vessel.Situations.PRELAUNCH)
-            {
-                //Add up the two parts of the overall delay and show me the numbers
-                PAWtimeToActivate = totalDelay = delaySeconds + (delayMinutes * 60f);
-
-                //Set the visible PAW variable 
-                if (modInUse)
-                {
-                    PAWmodInUse = StringConnected;
-                    //Set the text for inFlight Information
-                    PAWdelayMode = delayMode;
-
-                    GameEvents.onLaunch.Add(isLaunched);
-                    GameEvents.onPartDie.Add(isDead);
-                }
-                else
-                {
-                    PAWmodInUse = StringDisconnected;
-                    //Disable all text for inFlight Information
-                    Fields[nameof(PAWtimeToActivate)].guiActive = false;
-                    Fields[nameof(PAWdelayMode)].guiActive = false;
-                    Fields[nameof(eventMessagingWanted)].guiActive = false;
-                }
-
-            }
         }
 
         //Initialize all the fields when in EDITOR
@@ -259,20 +265,24 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
+        //Gets called every .1 seconds to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
             activeCoroutine = 2;
             for (; ; )
             {
-                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                //Calculate how long until the engine ignites
+                PAWtimeToActivate = vessel.orbit.timeToAp - totalDelay;
+
+                if (PAWtimeToActivate > 10.1)
                 {
+                    nextMessageStep = (char)0;
                     StartCoroutine(coroutinePreApside());
                     StopCoroutine(coroutinePreApsideWait());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(5.0f);
+                yield return new WaitForSeconds(0.1f);
             }
         }
 

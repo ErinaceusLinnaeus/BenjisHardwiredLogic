@@ -94,19 +94,28 @@ namespace BenjisHardwiredLogic
         //Resume the last active coroutine, makes (quick-)saving useable
         private void isLoading()
         {
+            setMessagingStep();
+
             if (activeCoroutine == 1)
                 StartCoroutine(coroutinePostLaunch());
 
         }
 
-        //Initialize all the fields when in FLIGHT
-        /*
-        private async void initMod()
+        //Setting the correct messaging step
+        private void setMessagingStep()
         {
-            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            await Task.Delay(250);
-        */
-        IEnumerator coroutineInitMod()
+            if (PAWtimeToRelease > 10)
+                nextMessageStep = (char)0;
+            else if (PAWtimeToRelease <= 10 && PAWtimeToRelease > 5)
+                nextMessageStep = (char)1;
+            else if (PAWtimeToRelease <= 5 && PAWtimeToRelease > 2)
+                nextMessageStep = (char)2;
+            else if (PAWtimeToRelease <= 2 && PAWtimeToRelease > 0)
+                nextMessageStep = (char)3;
+        }
+
+            //Initialize all the fields when in FLIGHT
+            IEnumerator coroutineInitMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             yield return new WaitForSeconds(0.25f);

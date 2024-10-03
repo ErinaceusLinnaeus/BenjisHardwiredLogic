@@ -76,7 +76,7 @@ namespace BenjisHardwiredLogic
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
+        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWIgniterGroupName, groupDisplayName = PAWIgniterGroupName)]
         private float totalDelay = 0;
 
         //Name what the engine will be called during event messaging
@@ -127,7 +127,7 @@ namespace BenjisHardwiredLogic
         private bool eventMessagingWanted = true;
 
         //A small variable to manage the onScreen Messages
-        private char nextMessageStep = (char)0;
+        private char nextMessageStep = (char)5;
 
         #endregion
 
@@ -164,19 +164,30 @@ namespace BenjisHardwiredLogic
         private void isLoading()
         {
             if (activeCoroutine == 1)
+            {
+                setMessagingStep();
                 StartCoroutine(coroutinePostLaunch());
+            }
             else if (activeCoroutine == 2)
                 StartCoroutine(coroutinePostLaunchCut());
             else if (activeCoroutine == 3)
                 StartCoroutine(coroutinePreApsideWait());
             else if (activeCoroutine == 4)
+            {
+                setMessagingStep();
+                tempEcc = vessel.orbit.eccentricity;
                 StartCoroutine(coroutinePreApside());
+            }
             else if (activeCoroutine == 5)
                 StartCoroutine(coroutinePreApsideCutAtApogee());
             else if (activeCoroutine == 6)
                 StartCoroutine(coroutinePreApsideCutAtPerigee());
             else if (activeCoroutine == 7)
+            {
+                Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+                tempEcc = vessel.orbit.eccentricity;
                 StartCoroutine(coroutinePreApsideCircularize());
+            }
             else if (activeCoroutine == 8)
                 StartCoroutine(coroutinePreApsideBurnOut());
 
@@ -184,83 +195,86 @@ namespace BenjisHardwiredLogic
                 StartCoroutine(coroutinePrintMessage());
         }
 
-        //Initialize all the fields when in FLIGHT
-        /*
-        private async void initMod()
+        //Setting the correct messaging step
+        private void setMessagingStep()
         {
-            //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
-            await Task.Delay(250);
-        */
+            if (PAWtimeToIgnite > 10)
+                nextMessageStep = (char)0;
+            else if (PAWtimeToIgnite <= 10 && PAWtimeToIgnite > 5)
+                nextMessageStep = (char)1;
+            else if (PAWtimeToIgnite <= 5 && PAWtimeToIgnite > 2)
+                nextMessageStep = (char)2;
+            else if (PAWtimeToIgnite <= 2 && PAWtimeToIgnite > 0)
+                nextMessageStep = (char)3;
+        }
+
+        //Initialize all the fields when in FLIGHT
         IEnumerator coroutineInitMod()
         {
             //Wait a bit to avoid the splashed bug, where the vesel can enter/stay in SPLASHED situation if something is done too early (before first physics tick)
             yield return new WaitForSeconds(0.25f);
 
-            if (activeCoroutine != 0)
-                isLoading();
+            //Add up the two parts of the overall delay and show me the numbers
+            PAWtimeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
 
-            //Now to check if we are on the launch pad
-            if (vessel.situation == Vessel.Situations.PRELAUNCH)
+            //Set the visible PAW variable 
+            if (modInUse)
             {
-                //Add up the two parts of the overall delay and show me the numbers
-                PAWtimeToIgnite = totalDelay = delaySeconds + (delayMinutes * 60f);
-
-                //Set the visible PAW variable 
-                if (modInUse)
+                PAWmodInUse = StringConnected;
+                //Set the text for inFlight Information
+                PAWdelayMode = delayMode;
+                if (delayMode == "Post Launch")
                 {
-                    PAWmodInUse = StringConnected;
-                    //Set the text for inFlight Information
-                    PAWdelayMode = delayMode;
-                    if (delayMode == "Post Launch")
+                    if (cutAtApogee)
                     {
-                        if (cutAtApogee)
-                        {
-                            PAWcutAtApogee = StringActive;
-                            PAWtargetApogee = string.Format("{0:N0}", targetApogee);
-                        }
-                        else
-                        {
-                            Fields[nameof(PAWcutAtApogee)].guiActive = false;
-                            Fields[nameof(PAWtargetApogee)].guiActive = false;
-                        }
+                        PAWcutAtApogee = StringActive;
+                        PAWtargetApogee = string.Format("{0:N0}", targetApogee);
                     }
-                    else if (delayMode == "Pre Apside")
+                    else
                     {
                         Fields[nameof(PAWcutAtApogee)].guiActive = false;
                         Fields[nameof(PAWtargetApogee)].guiActive = false;
                     }
-
-                    PAWengine = engineType;
-                    //Show the kick mode if it is a kick stage
-                    if (engineType == "Apogee Kick Stage")
-                        PAWkickMode = apKickMode;
-                    //or hide it
-                    else
-                        Fields[nameof(PAWkickMode)].guiActive = false;
-                    //Show the targeted Apside if in Cut-Off mode
-                    if (apKickMode == "Cut-Off")
-                        PAWtargetApside = string.Format("{0:N0}", targetApside);
-                    //else hide it
-                    else
-                        Fields[nameof(PAWtargetApside)].guiActive = false;
-
-                    GameEvents.onLaunch.Add(isLaunched);
-                    GameEvents.onPartDie.Add(isDead);
                 }
-                else
+                else if (delayMode == "Pre Apside")
                 {
-                    PAWmodInUse = StringDisconnected;
-                    //Disable all text for inFlight Information
-                    Fields[nameof(PAWtimeToIgnite)].guiActive = false;
-                    Fields[nameof(PAWdelayMode)].guiActive = false;
-                    Fields[nameof(PAWengine)].guiActive = false;
-                    Fields[nameof(PAWkickMode)].guiActive = false;
-                    Fields[nameof(PAWtargetApside)].guiActive = false;
                     Fields[nameof(PAWcutAtApogee)].guiActive = false;
                     Fields[nameof(PAWtargetApogee)].guiActive = false;
-                    Fields[nameof(eventMessagingWanted)].guiActive = false;
                 }
+
+                PAWengine = engineType;
+                //Show the kick mode if it is a kick stage
+                if (engineType == "Apogee Kick Stage")
+                    PAWkickMode = apKickMode;
+                //or hide it
+                else
+                    Fields[nameof(PAWkickMode)].guiActive = false;
+                //Show the targeted Apside if in Cut-Off mode
+                if (apKickMode == "Cut-Off")
+                    PAWtargetApside = string.Format("{0:N0}", targetApside);
+                //else hide it
+                else
+                    Fields[nameof(PAWtargetApside)].guiActive = false;
+
+                GameEvents.onLaunch.Add(isLaunched);
+                GameEvents.onPartDie.Add(isDead);
             }
+            else
+            {
+                PAWmodInUse = StringDisconnected;
+                //Disable all text for inFlight Information
+                Fields[nameof(PAWtimeToIgnite)].guiActive = false;
+                Fields[nameof(PAWdelayMode)].guiActive = false;
+                Fields[nameof(PAWengine)].guiActive = false;
+                Fields[nameof(PAWkickMode)].guiActive = false;
+                Fields[nameof(PAWtargetApside)].guiActive = false;
+                Fields[nameof(PAWcutAtApogee)].guiActive = false;
+                Fields[nameof(PAWtargetApogee)].guiActive = false;
+                Fields[nameof(eventMessagingWanted)].guiActive = false;
+            }
+
+            if (activeCoroutine != 0)
+                isLoading();
         }
 
         //Initialize all the fields when in EDITOR
@@ -440,20 +454,24 @@ namespace BenjisHardwiredLogic
             }
         }
 
-        //Gets called every 5 seconds to check if the vessel is suborbital, then starts the countdown
+        //Gets called every .1 second to check if the vessel is suborbital, then starts the countdown
         IEnumerator coroutinePreApsideWait()
         {
             activeCoroutine = 3;
             for (; ; )
             {
-                if (vessel.situation == Vessel.Situations.SUB_ORBITAL)
+                //Calculate how long until the engine ignites
+                PAWtimeToIgnite = vessel.orbit.timeToAp - totalDelay;
+
+                if (PAWtimeToIgnite > 10.1)
                 {
+                    nextMessageStep = (char)0;
                     StartCoroutine(coroutinePreApside());
                     StopCoroutine(coroutinePreApsideWait());
                     yield break;
                 }
 
-                yield return new WaitForSeconds(5.0f);
+                yield return new WaitForSeconds(0.1f);
             }
         }
 
