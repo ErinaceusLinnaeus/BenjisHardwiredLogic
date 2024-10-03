@@ -60,7 +60,7 @@ namespace BenjisHardwiredLogic
         private float delayMinutes = 0;
 
         //Seconds and Minutes (*60) added
-        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Total Delay", guiUnits = "sec", guiFormat = "F1", groupName = PAWRCSGroupName, groupDisplayName = PAWRCSGroupName)]
         private float totalDelay = 0;
 
         //The PAW fields in Flight
