@@ -2,7 +2,7 @@
 ##### 2.1.0
 ##### Addition:
 ##### - Launch Clamps have a timer now
-#####		(Because of that, the flight timer starts at engine light. Add that to you're other timers)
+#####   (Because of that, the flight timer starts at engine light. Keep that in mind and add that to you're other timers)
 ##### Fixes:
 ##### - Some fields were visible even when inactive
 ##### - Messaging System gave up after loading
