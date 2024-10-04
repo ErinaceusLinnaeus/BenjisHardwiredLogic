@@ -23,6 +23,12 @@ namespace BenjisHardwiredLogic
         // 10.075 m < ALT < 97.800 m  :   (0.00003 * (x * x * x)) - (0.008594 * (x * x)) + (1.075113 * x) + 16.851515
         // 80.000 m < ALT < 240.000 m :   -(0.000889 * (x*x)) + (0.456161 * x) + 31.754229
 
+        // SIMPLIFICATION:
+        // x = Altitude
+        // f(x)=\sqrt{(g^{2}-\left(0.36x-g\right)^{2})}\left\{x<2.78g\right\}
+        // pitch-angle = Math.Sqrt(g * g - Math.Pow(0.36 * x - g, 2));
+        // pitch-angle = Math.Sqrt(8100 - Math.Pow(0.36 * x - 90, 2));
+        
         #region Fields
 
 
