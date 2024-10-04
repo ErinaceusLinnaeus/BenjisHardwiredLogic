@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace BenjisHardwiredLogic
 {
-    internal class BenjisAutoAscent : PartModule //ModuleSAS
+    internal class BenjisBallisticThrow : PartModule //ModuleSAS
     {
 
         #region Fields
