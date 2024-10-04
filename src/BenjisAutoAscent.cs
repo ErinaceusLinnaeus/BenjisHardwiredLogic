@@ -28,6 +28,7 @@ namespace BenjisHardwiredLogic
         // f(x)=\sqrt{(g^{2}-\left(0.36x-g\right)^{2})}\left\{x<2.78g\right\}
         // pitch-angle = Math.Sqrt(g * g - Math.Pow(0.36 * x - g, 2));
         // pitch-angle = Math.Sqrt(8100 - Math.Pow(0.36 * x - 90, 2));
+        // 90° bei 250 km
         
         #region Fields
 
