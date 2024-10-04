@@ -24,7 +24,7 @@ namespace BenjisHardwiredLogic
 
         //Headline name for the GUI
         [KSPField(isPersistant = false, guiActive = false)]
-        private const string PAWAscentGroupName = "Benji's Auto Ascent";
+        private const string PAWAscentGroupName = "Benji's Ballistic Throw";
 
         //Text, if functionality is disabled/enabled
         [KSPField(isPersistant = false, guiActive = false)]
