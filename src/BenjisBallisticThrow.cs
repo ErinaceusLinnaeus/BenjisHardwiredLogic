@@ -14,6 +14,14 @@ namespace BenjisHardwiredLogic
 
         #region Fields
 
+        //The Marker the rocket tries to follow
+        [KSPField(isPersistant = false, guiActive = false)]
+        private DirectionTarget directionGuidance = new DirectionTarget("directionGuidance");
+
+        //Saving UniversalTime into launchTime when the Vessel gets launched
+        [KSPField(isPersistant = true, guiActive = false)]
+        private double launchTime = 0;
+
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
         private int activeCoroutine = 0;
@@ -40,6 +48,8 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
+        [KSPField(isPersistant = false, guiActive = false)]
+        private double desiredPitch = 0;
 
         //The PAW fields in the editor
         //A button to enable or disable the module
@@ -218,6 +228,13 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            //Lock into the direction Marker
+            vessel.targetObject = directionAscentGuidance;
+            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+
             StartCoroutine(coroutineTurn());
         }
 
@@ -242,6 +259,12 @@ namespace BenjisHardwiredLogic
                 // Put r into the function above and x will be the time since lift off, giving the angle the rocket needs to stear to
 
                 //Desmos: https://www.desmos.com/calculator/cduplyp5aq
+
+                //Update the direction Marker depending on the flight time
+                double x = Planetarium.GetUniversalTime() - launchTime;
+                desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * x - PAWestimatedFPA, 2));
+                
+                directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
 
                 yield return new WaitForSeconds(.1f);
             }
