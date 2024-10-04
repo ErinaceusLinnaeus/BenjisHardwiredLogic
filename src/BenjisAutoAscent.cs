@@ -124,9 +124,7 @@ namespace BenjisHardwiredLogic
         private void isLoading()
         {
             if (activeCoroutine == 1)
-                StartCoroutine(coroutineWaitForSpeed());
-            else if (activeCoroutine == 2)
-                StartCoroutine(coroutineBallisticTrajectory());
+                StartCoroutine(coroutineTurn());;
         }
 
         //Initialize all the fields when in FLIGHT
@@ -220,31 +218,30 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
-            StartCoroutine(coroutineWaitForSpeed());
-        }
-
-        //Gets called every .1 seconds checks if the rocket goes fast enough to start the turn
-        IEnumerator coroutineWaitForSpeed()
-        {
-            activeCoroutine = 1;
-            for (; ; )
-            {
-                if (vessel.srfSpeed > 50)
-                {
-                    StartCoroutine(coroutineBallisticTrajectory());
-                    StopCoroutine(coroutineWaitForSpeed());
-                }
-
-                yield return new WaitForSeconds(.1f);
-            }
+            StartCoroutine(coroutineTurn());
         }
 
         //Gets called every .1 seconds and starts the turn
-        IEnumerator coroutineBallisticTrajectory()
+        IEnumerator coroutineTurn()
         {
             activeCoroutine = 2;
             for (; ; )
             {
+                //ANGLE = Math.Sqrt(Math.Pow(r, 2) - Math.Pow(0.5 * x - r, 2)); for (x < 2 * r);
+                //r is the radius of the quarter-circle...the so called turn shape
+
+                //THOUGHTS:
+                //  desired end-angle is given by the dV->downrange->angle calcculation
+                //  I need to match that with the "burn time"
+                //  example: burn-time = 60 = x
+                //           angle = 30
+                //           Above formula needs to be 30 for x = 60
+                //  -> I need a loop/formula that finds out what radius I need to have f(60) = 30
+                //  ARIA says:
+                //      r = (Math.Pow ((angle, 2) + 0.25 * Math.Pow(burn-time, 2)) ) / burn-time;
+                // Put r into the function above and x will be the time since lift off, giving the angle the rocket needs to stear to
+
+                //Desmos: https://www.desmos.com/calculator/xiquybrqt9
 
                 yield return new WaitForSeconds(.1f);
             }
@@ -273,8 +270,7 @@ namespace BenjisHardwiredLogic
         {
             //Stopping all the coroutines that might be running
             StopCoroutine(coroutineInitMod());
-            StopCoroutine(coroutineWaitForSpeed());
-            StopCoroutine(coroutineBallisticTrajectory());
+            StopCoroutine(coroutineTurn());
         }
 
         #endregion
