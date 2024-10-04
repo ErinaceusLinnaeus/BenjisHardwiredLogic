@@ -241,7 +241,7 @@ namespace BenjisHardwiredLogic
                 //      r = (Math.Pow ((angle, 2) + 0.25 * Math.Pow(burn-time, 2)) ) / burn-time;
                 // Put r into the function above and x will be the time since lift off, giving the angle the rocket needs to stear to
 
-                //Desmos: https://www.desmos.com/calculator/xiquybrqt9
+                //Desmos: https://www.desmos.com/calculator/cduplyp5aq
 
                 yield return new WaitForSeconds(.1f);
             }
