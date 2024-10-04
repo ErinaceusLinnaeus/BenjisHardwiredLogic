@@ -1,7 +1,9 @@
 ## Changelog:
 ##### 2.2.0
 ##### Addition:
-##### - Simple automated guidance computer for those ballistic shots (downrange contracts)
+##### - Benji's Ballistic Throw: 'Simple automated guidance computer for those ballistic shots (downrange contracts)
+##### Change:
+##### - Excluding the Launch Clamps module from stock. Only makes sense for thos RO engine spool up times
 ##### 2.1.0
 ##### Addition:
 ##### - Launch Clamps have a timer now
