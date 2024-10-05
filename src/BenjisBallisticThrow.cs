@@ -24,7 +24,7 @@ namespace BenjisHardwiredLogic
 
         //Saving UniversalTime into launchTime when the Vessel gets launched
         [KSPField(isPersistant = true, guiActive = true)]
-        private double x = 0;
+        private double missionTime = 0;
 
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
@@ -245,14 +245,14 @@ namespace BenjisHardwiredLogic
         //Gets called every .1 seconds and starts the turn
         IEnumerator coroutineTurn()
         {
-            activeCoroutine = 2;
+            activeCoroutine = 1;
             for (; ; )
             {
                 //ANGLE = Math.Sqrt(Math.Pow(r, 2) - Math.Pow(0.5 * x - r, 2)); for (x < 2 * r);
                 //r is the radius of the quarter-circle...the so called turn shape
 
                 //THOUGHTS:
-                //  desired end-angle is given by the dV->downrange->angle calcculation
+                //  desired end-angle is given by the dV->downrange->angle calculation
                 //  I need to match that with the "burn time"
                 //  example: burn-time = 60 = x
                 //           angle = 30
@@ -264,11 +264,11 @@ namespace BenjisHardwiredLogic
 
                 //Desmos: https://www.desmos.com/calculator/cduplyp5aq
 
-                if (x < totalGuidedFlight)
+                if (missionTime < totalGuidedFlight)
                 {
                     //Update the direction Marker depending on the flight time
-                    x = Planetarium.GetUniversalTime() - launchTime;
-                    desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * x - PAWestimatedFPA, 2));
+                    missionTime = Planetarium.GetUniversalTime() - launchTime;
+                    desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * missionTime - PAWestimatedFPA, 2));
 
                     directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
                 }
@@ -277,8 +277,21 @@ namespace BenjisHardwiredLogic
                     directionGuidance.Update(vessel, (90 - PAWestimatedFPA), 90, true);
                 }
 
-                yield return new WaitForSeconds(.1f);
+                if ((missionTime + gimbalSpinPreSeconds) > totalGuidedFlight)
+                {
+                    vessel.OnFlyByWire -= steeringCommand_GimalRoll;
+                    vessel.OnFlyByWire += steeringCommand_GimalRoll;
+                }
+
+                    yield return new WaitForSeconds(.1f);
             }
+        }
+
+        //All the steering happens here
+        private void steeringCommand_GimalRoll(FlightCtrlState state)
+        {
+            
+            state.roll = 1.0f;
         }
 
         //Hide all the fields
