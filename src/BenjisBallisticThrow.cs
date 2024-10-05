@@ -22,6 +22,10 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActive = false)]
         private double launchTime = 0;
 
+        //Saving UniversalTime into launchTime when the Vessel gets launched
+        [KSPField(isPersistant = true, guiActive = true)]
+        private double x = 0;
+
         //Keeping track of what coroutine is running at the moment
         [KSPField(isPersistant = true, guiActive = false)]
         private int activeCoroutine = 0;
@@ -48,7 +52,7 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = false, guiActive = false)]
         private const string StringActive = "active";
 
-        [KSPField(isPersistant = false, guiActive = false)]
+        [KSPField(isPersistant = false, guiActive = true)]
         private double desiredPitch = 0;
 
         //The PAW fields in the editor
@@ -93,11 +97,11 @@ namespace BenjisHardwiredLogic
 
         //Shown in the Editor and in Flight
         //Shows the estimated downrange for the dV given
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Estimated Downrange", guiUnits = "km", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Estimated Downrange", guiUnits = "km", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private double PAWestimatedDownrange = 0;
 
         //Shows the estimated flight path angle (FPA) at the end of the burn
-        [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Estimated FPA", guiUnits = "°", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Estimated FPA", guiUnits = "°", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private double PAWestimatedFPA = 0;
 
         #endregion
@@ -154,7 +158,7 @@ namespace BenjisHardwiredLogic
                 if (modInUse)
                 {
                     PAWmodInUse = StringConnected;
-
+                    totalGuidedFlight = guidedFlightSeconds + (guidedFlightMinutes * 60);
                     GameEvents.onLaunch.Add(isLaunched);
                     GameEvents.onPartDie.Add(isDead);
                 }
@@ -232,7 +236,7 @@ namespace BenjisHardwiredLogic
             launchTime = Planetarium.GetUniversalTime();
 
             //Lock into the direction Marker
-            vessel.targetObject = directionAscentGuidance;
+            vessel.targetObject = directionGuidance;
             vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
 
             StartCoroutine(coroutineTurn());
@@ -260,11 +264,18 @@ namespace BenjisHardwiredLogic
 
                 //Desmos: https://www.desmos.com/calculator/cduplyp5aq
 
-                //Update the direction Marker depending on the flight time
-                double x = Planetarium.GetUniversalTime() - launchTime;
-                desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * x - PAWestimatedFPA, 2));
-                
-                directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
+                if (x < totalGuidedFlight)
+                {
+                    //Update the direction Marker depending on the flight time
+                    x = Planetarium.GetUniversalTime() - launchTime;
+                    desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * x - PAWestimatedFPA, 2));
+
+                    directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
+                }
+                else
+                {
+                    directionGuidance.Update(vessel, (90 - PAWestimatedFPA), 90, true);
+                }
 
                 yield return new WaitForSeconds(.1f);
             }
