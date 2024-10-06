@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ProceduralSpaceObject;
+using UnityEngine.SceneManagement;
 
 
 namespace BenjisHardwiredLogic
@@ -61,6 +63,11 @@ namespace BenjisHardwiredLogic
             UI_Toggle(disabledText = StringDisconnected, enabledText = StringConnected)]
         private bool modInUse = false;
 
+        //Specify the angle you wanna end up at
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "F0", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 10000f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 1f, sigFigs = 0)]
+        private float deltaV = 5000;
+
         //Specify when the rocket should reach the desired ballistic angle in seconds in the Editor
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Guided Flight [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 59.9f, incrementLarge = 10f, incrementSmall = 1f, incrementSlide = 0.1f, sigFigs = 1)]
@@ -81,14 +88,9 @@ namespace BenjisHardwiredLogic
         private bool gimbalSpin = true;
 
         //Specify how long before the gimbal spin should start in the Editor
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Gimbal Spin Pre Delay [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Pre Delay [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 5.0f, incrementLarge = 1f, incrementSmall = 0.1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float gimbalSpinPreSeconds = 2.5f;
-
-        //Specify the angle you wanna end up at
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "N", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
-            UI_FloatEdit(scene = UI_Scene.All, minValue = 0, maxValue = 10000f, incrementLarge = 1000, incrementSmall = 100, incrementSlide = 1, sigFigs = 1)]
-        private int deltaV = 5000;
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
@@ -188,17 +190,18 @@ namespace BenjisHardwiredLogic
         {
             if (modInUse)
             {
+                totalGuidedFlight = guidedFlightSeconds + (guidedFlightMinutes * 60);
                 //Calculate the downrange for the given dV with a 45° angle (flat surface in a vaccuum...physics)
                 PAWestimatedDownrange = ((Math.Pow(deltaV, 2) * Math.Sin(2 * (45 * (Math.PI / 180.0)))) / 9.81) / 1000.0f;
                 //Correct the angle with the earth's curvature
                 PAWestimatedFPA = 14.325 * (Math.PI - (PAWestimatedDownrange / 6371));
-                                //14.325 * (π - (Downrange Distance / Radius of Earth))
+                //14.325 * (π - (Downrange Distance / Radius of Earth))
 
 
+                Fields[nameof(deltaV)].guiActiveEditor = true;
                 Fields[nameof(guidedFlightSeconds)].guiActiveEditor = true;
                 Fields[nameof(guidedFlightMinutes)].guiActiveEditor = true;
                 Fields[nameof(totalGuidedFlight)].guiActiveEditor = true;
-                Fields[nameof(deltaV)].guiActiveEditor = true;
                 Fields[nameof(gimbalSpin)].guiActiveEditor = true;
                 if (gimbalSpin == true)
                     Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = true;
@@ -213,10 +216,10 @@ namespace BenjisHardwiredLogic
                 if (Fields[nameof(guidedFlightSeconds)].guiActiveEditor)
                     negChangeHappened = true;
 
+                Fields[nameof(deltaV)].guiActiveEditor = false;
                 Fields[nameof(guidedFlightSeconds)].guiActiveEditor = false;
                 Fields[nameof(guidedFlightMinutes)].guiActiveEditor = false;
                 Fields[nameof(totalGuidedFlight)].guiActiveEditor = false;
-                Fields[nameof(deltaV)].guiActiveEditor = false;
                 Fields[nameof(gimbalSpin)].guiActiveEditor = false;
                 Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = false;
                 Fields[nameof(PAWestimatedDownrange)].guiActiveEditor = false;
