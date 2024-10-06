@@ -75,11 +75,6 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = false, guiActiveEditor = true, guiActive = true, guiName = "Total Guided Flight", guiUnits = "sec", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private float totalGuidedFlight = 0;
 
-        //Specify the angle you wanna end up at
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
-            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 10000.0f, incrementLarge = 1000f, incrementSmall = 100f, incrementSlide = 1f, sigFigs = 1)]
-        private float deltaV = 5000;
-
         //A button to enable or disable the gimbal spin at the end of the guided flight
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Gimbal Spin:", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_Toggle(disabledText = StringInactive, enabledText = StringActive)]
@@ -89,6 +84,11 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Gimbal Spin Pre Delay [sec]", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 5.0f, incrementLarge = 1f, incrementSmall = 0.1f, incrementSlide = 0.1f, sigFigs = 1)]
         private float gimbalSpinPreSeconds = 2.5f;
+
+        //Specify the angle you wanna end up at
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "I", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0, maxValue = 10000f, incrementLarge = 1000, incrementSmall = 100, incrementSlide = 1, sigFigs = 1)]
+        private int deltaV = 5000;
 
         //The PAW fields in Flight
         //Shows if the decoupler is active
