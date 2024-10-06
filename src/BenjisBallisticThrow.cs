@@ -200,7 +200,10 @@ namespace BenjisHardwiredLogic
                 Fields[nameof(totalGuidedFlight)].guiActiveEditor = true;
                 Fields[nameof(deltaV)].guiActiveEditor = true;
                 Fields[nameof(gimbalSpin)].guiActiveEditor = true;
-                Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = true;
+                if (gimbalSpin == true)
+                    Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = true;
+                else
+                    Fields[nameof(gimbalSpinPreSeconds)].guiActiveEditor = false;
                 Fields[nameof(PAWestimatedDownrange)].guiActiveEditor = true;
                 Fields[nameof(PAWestimatedFPA)].guiActiveEditor = true;
             }
