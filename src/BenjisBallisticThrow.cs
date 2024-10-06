@@ -140,7 +140,9 @@ namespace BenjisHardwiredLogic
         private void isLoading()
         {
             if (activeCoroutine == 1)
-                StartCoroutine(coroutineTurn());;
+                StartCoroutine(coroutineWaitForTurn());
+            else if (activeCoroutine == 2)
+                StartCoroutine(coroutineTurn());
         }
 
         //Initialize all the fields when in FLIGHT
@@ -238,20 +240,41 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
-            //Set the launch time
-            launchTime = Planetarium.GetUniversalTime();
-
             //Lock into the direction Marker
-            vessel.targetObject = directionGuidance;
-            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Prograde);
 
-            StartCoroutine(coroutineTurn());
+            StartCoroutine(coroutineWaitForTurn());
+        }
+
+        //Gets called every .1 seconds and starts the turn
+        IEnumerator coroutineWaitForTurn()
+        {
+            activeCoroutine = 1;
+
+            for (; ; )
+            {
+                if (vessel.srfSpeed > 50)
+                {
+                    //Set the launch time
+                    launchTime = Planetarium.GetUniversalTime();
+
+                    //Lock into the direction Marker
+                    vessel.targetObject = directionGuidance;
+                    vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+
+                    StopCoroutine(coroutineWaitForTurn());
+                    StartCoroutine(coroutineTurn());
+                }
+
+                yield return new WaitForSeconds(.1f);
+            }
+
         }
 
         //Gets called every .1 seconds and starts the turn
         IEnumerator coroutineTurn()
         {
-            activeCoroutine = 1;
+            activeCoroutine = 2;
             for (; ; )
             {
                 //ANGLE = Math.Sqrt(Math.Pow(r, 2) - Math.Pow(0.5 * x - r, 2)); for (x < 2 * r);
@@ -289,7 +312,11 @@ namespace BenjisHardwiredLogic
                     vessel.OnFlyByWire += steeringCommand_GimalRoll;
                 }
 
-                    yield return new WaitForSeconds(.1f);
+                DebugLines.draw(vessel, "Target", directionGuidance.direction, Color.green);
+                DebugLines.draw(vessel, "AirPrograde", vessel.srf_velocity, Color.blue);
+                DebugLines.draw(vessel, "VacuumPrograde", vessel.obt_velocity, Color.red);
+
+                yield return new WaitForSeconds(.1f);
             }
         }
 
