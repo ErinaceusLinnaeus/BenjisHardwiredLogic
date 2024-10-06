@@ -86,7 +86,7 @@ namespace BenjisHardwiredLogic
         private float gimbalSpinPreSeconds = 2.5f;
 
         //Specify the angle you wanna end up at
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "I", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "DeltaV [m/s]", guiFormat = "N", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
             UI_FloatEdit(scene = UI_Scene.All, minValue = 0, maxValue = 10000f, incrementLarge = 1000, incrementSmall = 100, incrementSlide = 1, sigFigs = 1)]
         private int deltaV = 5000;
 
