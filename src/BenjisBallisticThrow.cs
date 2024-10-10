@@ -29,7 +29,7 @@ namespace BenjisHardwiredLogic
         private double missionTime = 0;
 
         //Keeping track of what coroutine is running at the moment
-        [KSPField(isPersistant = true, guiActive = false)]
+        [KSPField(isPersistant = true, guiActive = true)]
         private int activeCoroutine = 0;
 
         //Catch the slider dragging "bug"
@@ -143,6 +143,8 @@ namespace BenjisHardwiredLogic
                 StartCoroutine(coroutineWaitForTurn());
             else if (activeCoroutine == 2)
                 StartCoroutine(coroutineTurn());
+            else if (activeCoroutine == 3)
+                StartCoroutine(coroutineGimbalSpin());                
         }
 
         //Initialize all the fields when in FLIGHT
@@ -240,12 +242,16 @@ namespace BenjisHardwiredLogic
         //Gets called by the GameEvent when the rocket is launched
         private void isLaunched(EventReport report)
         {
-            //Lock into the direction Marker
-            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Prograde);
+            //Set the launch time
+            launchTime = Planetarium.GetUniversalTime();
+
+            //Turn on SAS
+            vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
+            vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.StabilityAssist);
 
             StartCoroutine(coroutineWaitForTurn());
         }
-
+        
         //Gets called every .1 seconds and starts the turn
         IEnumerator coroutineWaitForTurn()
         {
@@ -253,17 +259,20 @@ namespace BenjisHardwiredLogic
 
             for (; ; )
             {
-                if (vessel.srfSpeed > 50)
-                {
-                    //Set the launch time
-                    launchTime = Planetarium.GetUniversalTime();
+                //Update the direction Marker depending on the flight time
+                missionTime = Planetarium.GetUniversalTime() - launchTime;
 
+                if (vessel.srfSpeed > 20)
+                {
+
+                    //directionGuidance.Update(vessel, 90, 90, true);
                     //Lock into the direction Marker
                     vessel.targetObject = directionGuidance;
                     vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
 
                     StopCoroutine(coroutineWaitForTurn());
                     StartCoroutine(coroutineTurn());
+                    yield break;
                 }
 
                 yield return new WaitForSeconds(.1f);
@@ -275,6 +284,7 @@ namespace BenjisHardwiredLogic
         IEnumerator coroutineTurn()
         {
             activeCoroutine = 2;
+
             for (; ; )
             {
                 //ANGLE = Math.Sqrt(Math.Pow(r, 2) - Math.Pow(0.5 * x - r, 2)); for (x < 2 * r);
@@ -293,39 +303,55 @@ namespace BenjisHardwiredLogic
 
                 //Desmos: https://www.desmos.com/calculator/cduplyp5aq
 
-                if (missionTime < totalGuidedFlight)
-                {
-                    //Update the direction Marker depending on the flight time
-                    missionTime = Planetarium.GetUniversalTime() - launchTime;
-                    desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * missionTime - PAWestimatedFPA, 2));
+               //Update the direction Marker depending on the flight time
+                missionTime = Planetarium.GetUniversalTime() - launchTime;
+                desiredPitch = Math.Sqrt(Math.Pow(PAWestimatedFPA, 2) - Math.Pow(0.5 * missionTime - PAWestimatedFPA, 2));
+                directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
 
-                    directionGuidance.Update(vessel, (90 - desiredPitch), 90, true);
-                }
-                else
-                {
-                    directionGuidance.Update(vessel, (90 - PAWestimatedFPA), 90, true);
-                }
 
-                if ((missionTime + gimbalSpinPreSeconds) > totalGuidedFlight)
+                if (gimbalSpin && ((missionTime + gimbalSpinPreSeconds) > totalGuidedFlight))
                 {
-                    vessel.OnFlyByWire -= steeringCommand_GimalRoll;
-                    vessel.OnFlyByWire += steeringCommand_GimalRoll;
-                }
 
+                    StopCoroutine(coroutineTurn());
+                    StartCoroutine(coroutineGimbalSpin());
+                    vessel.OnFlyByWire += steeringCommand_GimbalRoll;
+                    yield break;
+                }
+                /*
                 DebugLines.draw(vessel, "Target", directionGuidance.direction, Color.green);
                 DebugLines.draw(vessel, "AirPrograde", vessel.srf_velocity, Color.blue);
                 DebugLines.draw(vessel, "VacuumPrograde", vessel.obt_velocity, Color.red);
+                */
+                yield return new WaitForSeconds(.1f);
+            }
+        }
+
+        //Gets called every .1 seconds and starts the turn
+        IEnumerator coroutineGimbalSpin()
+        {
+            activeCoroutine = 3;
+
+            for (; ; )
+            {
+                missionTime = Planetarium.GetUniversalTime() - launchTime;
+
+                if (missionTime >= totalGuidedFlight)
+                {
+                    vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                    vessel.OnFlyByWire -= steeringCommand_GimbalRoll;
+
+                    StopCoroutine(coroutineGimbalSpin());
+                    endMod();
+                    yield break;
+                }
 
                 yield return new WaitForSeconds(.1f);
             }
         }
 
+
         //All the steering happens here
-        private void steeringCommand_GimalRoll(FlightCtrlState state)
-        {
-            
-            state.roll = 1.0f;
-        }
+        private void steeringCommand_GimbalRoll(FlightCtrlState state) => state.roll = 1.0f;
 
         //Hide all the fields
         private void endMod()
@@ -350,7 +376,9 @@ namespace BenjisHardwiredLogic
         {
             //Stopping all the coroutines that might be running
             StopCoroutine(coroutineInitMod());
+            StopCoroutine(coroutineWaitForTurn());
             StopCoroutine(coroutineTurn());
+            StopCoroutine(coroutineGimbalSpin());
         }
 
         #endregion
