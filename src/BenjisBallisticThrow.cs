@@ -262,7 +262,7 @@ namespace BenjisHardwiredLogic
                 //Update the direction Marker depending on the flight time
                 missionTime = Planetarium.GetUniversalTime() - launchTime;
 
-                if (vessel.srfSpeed > 20)
+                if (vessel.srfSpeed > 0)//20)
                 {
 
                     //directionGuidance.Update(vessel, 90, 90, true);
