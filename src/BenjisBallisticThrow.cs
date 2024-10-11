@@ -317,11 +317,11 @@ namespace BenjisHardwiredLogic
                     vessel.OnFlyByWire += steeringCommand_GimbalRoll;
                     yield break;
                 }
-                /*
+                
                 DebugLines.draw(vessel, "Target", directionGuidance.direction, Color.green);
                 DebugLines.draw(vessel, "AirPrograde", vessel.srf_velocity, Color.blue);
                 DebugLines.draw(vessel, "VacuumPrograde", vessel.obt_velocity, Color.red);
-                */
+                
                 yield return new WaitForSeconds(.1f);
             }
         }
