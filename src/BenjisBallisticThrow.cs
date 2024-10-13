@@ -106,6 +106,16 @@ namespace BenjisHardwiredLogic
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Estimated FPA", guiUnits = "°", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName)]
         private double PAWestimatedFPA = 0;
 
+        //////////////////////////////////////
+        /// DEBUGGING THE DIRECTIONS IN RO ///
+        //////////////////////////////////////
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Heading", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 359.9f, incrementLarge = 45.0f, incrementSmall = 4.5f, incrementSlide = 0.1f, sigFigs = 1)]
+        private float DebugHeading = 90.0f;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "Pitch", guiFormat = "F1", groupName = PAWAscentGroupName, groupDisplayName = PAWAscentGroupName),
+            UI_FloatEdit(scene = UI_Scene.All, minValue = 0f, maxValue = 359.9f, incrementLarge = 45.0f, incrementSmall = 4.5f, incrementSlide = 0.1f, sigFigs = 1)]
+        private float DebugPitch = 90.0f;
+
         #endregion
 
         #region Overrides
@@ -259,6 +269,14 @@ namespace BenjisHardwiredLogic
 
             for (; ; )
             {
+
+                directionGuidance.Update(vessel, DebugPitch, DebugHeading, true);
+                //Lock into the direction Marker
+                vessel.targetObject = directionGuidance;
+                vessel.Autopilot.Enable(VesselAutopilot.AutopilotMode.Target);
+
+
+                /* INACTIVE WHILE DEBUGGING
                 //Update the direction Marker depending on the flight time
                 missionTime = Planetarium.GetUniversalTime() - launchTime;
 
@@ -274,7 +292,7 @@ namespace BenjisHardwiredLogic
                     StartCoroutine(coroutineTurn());
                     yield break;
                 }
-
+                */
                 yield return new WaitForSeconds(.1f);
             }
 
